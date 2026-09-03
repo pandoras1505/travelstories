@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-03, fin de la **Phase 8** (Lecteur vidéo).
+Dernière mise à jour : 2026-09-03, fin de la **Phase 9** (Home Feed + Explore).
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan (README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT restent à créer, voir "Dette de documentation" en bas).
 
 ---
@@ -27,8 +27,8 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 6 | Camera + Gallery + Storage (pipeline média) | ✅ |
 | 7 | Geolocation + Maps | ✅ (Maps = OpenStreetMap, pas Google Maps — voir §4) |
 | 8 | Video Player | ✅ |
-| 9 | Home Feed + Explore | ⬜ **prochaine étape** |
-| 10 | SQLite | ⬜ |
+| 9 | Home Feed + Explore | ✅ |
+| 10 | SQLite | ⬜ **prochaine étape** |
 | 11 | Offline-first | ⬜ |
 | 12 | Synchronization Engine | ⬜ |
 | 13 | Security Rules (audit complet) | ⬜ (règles de base déjà écrites et déployées au fil de l'eau, Phase 13 = revue/durcissement) |
@@ -59,11 +59,13 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 3. **Storage Firebase non activé** : nécessite le plan payant **Blaze** (facturation à l'usage, carte requise même pour rester dans le quota gratuit) depuis fin 2024. L'utilisateur n'a pas de carte disponible → Storage reste non provisionné. Le code d'upload (avatar, couverture, média expérience) est réel et correct, mais échouera à l'exécution tant que Storage n'est pas activé. Rien à faire côté code, juste en attente d'une décision utilisateur.
 4. **Google Maps Platform écarté** : nécessite aussi une carte bancaire (même contrainte que Storage). Remplacé par **OpenStreetMap** via `flutter_map` (gratuit, aucune clé API). Décision actée et déployée Phase 7.
 5. **`flutter` n'est pas dans le PATH** : toujours préfixer les commandes PowerShell par `$env:Path += ";C:\MASTER\flutter_windows_3.41.6-stable\flutter\bin"`.
+6. **Ne jamais `await Future.delayed(...)` dans un corps de `testWidgets`** : l'horloge du binding de test (`flutter_test`) n'avance que via `tester.pump(duration)` — un `Future.delayed` réel reste en attente indéfiniment et bloque le test (repéré Phase 9 : un test seedant deux carnets avec un `Future.delayed(5ms)` entre les deux pour forcer des `createdAt` distincts a fait planter toute la suite pendant ~10 min avant timeout). Pour des timestamps distincts dans un fake, décaler par ordre d'insertion (voir `FakeTravelBookRepository.createTravelBook`), jamais par une vraie pause.
+7. **Les listes lazy (`ListView`/`SliverList` dans un `CustomScrollView`) ne construisent que les items visibles dans le viewport de test** (par défaut 800×600) : un `find.text(...)` sur un item plus bas dans une longue liste renvoie `findsNothing` même s'il existe dans les données. Pour un test qui doit voir toute une liste courte sans scroller, agrandir la surface : `tester.view.physicalSize = const Size(800, 2400); tester.view.devicePixelRatio = 1.0;` (+ `addTearDown` pour les deux resets) plutôt que de scroller manuellement.
 
 ## 5. État Firebase (projet `travelstories-app`)
 
 - **Auth** : Email/Password + Google activés (par l'utilisateur, Phase 2).
-- **Firestore** : base par défaut créée (eur3), règles déployées (`firestore.rules`), index composites déployés (`firestore.indexes.json`). Schéma : `users/{uid}`, `travelBooks/{id}`, `travelBooks/{id}/experiences/{id}`.
+- **Firestore** : base par défaut créée (eur3), règles déployées (`firestore.rules`), index composites déployés (`firestore.indexes.json`, 4 index au total depuis la Phase 9 : `isPublic+createdAt`, `ownerId+updatedAt`, `isPublic+experienceCount+createdAt`, `isPublic+title+createdAt` — ces deux derniers pour le tri "Populaire" et le tri/recherche alphabétique d'Explorer). Schéma : `users/{uid}`, `travelBooks/{id}`, `travelBooks/{id}/experiences/{id}`. Le CLI `firebase` est installé et authentifié dans cet environnement — `firebase deploy --only firestore:indexes` (ou `:rules`) fonctionne normalement, contrairement aux builds Flutter (voir §4.1) : ce n'est pas concerné par la contrainte réseau/Gradle.
 - **Storage** : **non activé** (voir §4.3). `storage.rules` écrites mais pas déployées (le déploiement échouera tant que le bucket par défaut n'existe pas — nécessite le clic "Get Started" en console, qui nécessite Blaze).
 - **Config apps** : Android (`google-services.json`), iOS (`GoogleService-Info.plist`, placé manuellement — FlutterFire CLI ne peut pas le générer depuis Windows sans Xcode), Web (`firebase_options.dart`, gardé uniquement pour l'aide au QA local).
 - **iOS Google Sign-In** : `REVERSED_CLIENT_ID` câblé dans `Info.plist` (`CFBundleURLTypes`).
@@ -82,7 +84,7 @@ flutter analyze
 flutter test
 ```
 
-Dernier statut connu (fin Phase 8) : `flutter analyze` → 0 issue, `flutter test` → **20/20** tests verts.
+Dernier statut connu (fin Phase 9) : `flutter analyze` → 0 issue, `flutter test` → **22/22** tests verts.
 
 ## 7. Tests existants
 
@@ -91,7 +93,9 @@ Dernier statut connu (fin Phase 8) : `flutter analyze` → 0 issue, `flutter tes
 - `test/features/profile/profile_screen_test.dart` — affichage profil → édition → sauvegarde.
 - `test/features/travel_books/travel_book_flow_test.dart` — création carnet → détail → liste.
 - `test/features/experiences/experience_flow_test.dart` — ajout expérience → édition → suppression (avec dialogue de confirmation).
-- `test/fakes/` — un fake par repository (Auth/Profile/TravelBook/Experience), tous en mémoire, aucun SDK Firebase touché.
+- `test/features/home/home_feed_test.dart` — feed public (carnet en vedette + liste), un brouillon n'apparaît jamais, jointure auteur affichée.
+- `test/features/exploration/explore_screen_test.dart` — recherche par préfixe de titre (filtrage en direct, debounce 350ms), changement de tri sans crash.
+- `test/fakes/` — un fake par repository (Auth/Profile/TravelBook/Experience), tous en mémoire, aucun SDK Firebase touché. `FakeTravelBookRepository.fetchPublicTravelBooks` réimplémente tri/filtre/pagination en mémoire (miroir de la logique Firestore réelle) — si la logique de tri/pagination de `TravelBookRepositoryImpl` change, penser à répercuter le changement dans le fake.
 
 Aucun test dédié pour : geolocator/carte (Phase 7) ni video_player (Phase 8) — plugins natifs sans moyen réaliste de les exercer en environnement de test headless. Idem pour toute vérification "live" Firebase (voir §4).
 
@@ -106,13 +110,19 @@ Aucun test dédié pour : geolocator/carte (Phase 7) ni video_player (Phase 8) �
 
 Le brief exige `README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `OFFLINE_SYNC.md`, `DEPLOYMENT.md` maintenus en continu. **Aucun n'a été créé pour l'instant** (seul le `README.md` par défaut de `flutter create` existe encore, jamais mis à jour). À faire en Phase 17, ou plus tôt si utile.
 
-## 10. Prochaine étape : Phase 9 — Home Feed + Explore
+## 10. Phase 9 — ce qui a été livré (Home Feed + Explore)
 
-Premier écran vraiment "public" de l'app :
-- **Accueil** : flux des carnets publics (`isPublic == true`, query déjà indexée sur `isPublic + createdAt desc`), carnet en vedette, "destinations populaires", derniers carnets publiés. Pagination + pull-to-refresh + skeleton loading (section 19 du brief).
-- **Explorer** : recherche + filtres + tri sur les carnets publics (section 20 du brief — ne pas construire likes/favoris/commentaires/following, hors scope MVP explicitement).
-- Réutilisera `TravelBookRepository.watchMyTravelBooks` comme modèle mais avec une nouvelle méthode `watchPublicTravelBooks` (query `where isPublic == true orderBy createdAt desc`, avec pagination — probablement `Query.startAfterDocument` ou équivalent).
-- Il faudra aussi afficher l'auteur (nom + photo) sur chaque carte de carnet public → jointure légère avec `ProfileRepository.getProfile(ownerId)` (pas de dénormalisation prévue dans le schéma actuel, à discuter si les lectures deviennent coûteuses).
+- **Domaine/data** (dans la feature `travel_books`, pas une nouvelle feature — le carnet reste le concept central) : `TravelBookRepository.fetchPublicTravelBooks({sort, titlePrefix, limit, startAfter})` retourne un `PublicTravelBooksPage` (`typedef` record `{books, hasMore}`). Pagination par curseur (dernier `TravelBook` de la page précédente), page = `limit+1` lue en interne pour déterminer `hasMore` sans requête de comptage séparée. `PublicBooksSort` (`recent`/`popular`/`alphabetical`) — forcé à l'ordre alphabétique côté Firestore dès qu'une recherche par préfixe de titre est active (contrainte Firestore : le champ filtré par plage doit être le premier `orderBy`).
+- **Accueil** (`features/home`) : `HomeFeedController` (`AsyncNotifier`) — un carnet en vedette (le plus récent) + liste paginée des suivants, `refresh()` (pull-to-refresh) et `loadMore()` (scroll infini, déclenché par un `ScrollController`). Skeleton de chargement fait main (`ShimmerBox`, pas de nouvelle dépendance).
+  - **Scope réduit assumé** : pas de "destinations populaires" — le schéma actuel n'a pas de champ lieu sur `TravelBook` (seulement sur `Experience`), et l'agréger en direct via une requête `collectionGroup` aurait été coûteux/fragile pour du MVP. À reconsidérer si une dénormalisation de lieu est ajoutée plus tard.
+- **Explorer** (`features/exploration`) : `ExploreController` — recherche (debounce 350ms) + 3 tris (Récent/Populaire/A-Z), pagination identique à l'Accueil. Pas de likes/favoris/commentaires/following (hors scope MVP, confirmé dans le brief).
+- **UI partagée** : `PublicTravelBookCard` (`travel_books/presentation/widgets/`) — carte réutilisée par Accueil et Explorer, avec jointure auteur légère (`authorProfileProvider`, `FutureProvider.family` dans `profile_providers.dart`, `ProfileRepository.getProfile(ownerId)`). Toujours pas de dénormalisation auteur sur `TravelBook` — à revoir si les lectures deviennent coûteuses.
+- Le carnet public ouvert depuis Accueil/Explorer réutilise `TravelBookDetailScreen` tel quel (déjà capable de masquer les actions d'édition pour un non-propriétaire via `isOwner`) — aucune nouvelle route/écran de détail.
+- 2 nouveaux index composites Firestore déployés (voir §5).
+
+## 11. Prochaine étape : Phase 10 — SQLite
+
+Prépare le terrain pour l'offline-first (Phase 11) : schéma SQLite miroir de Firestore pour `travelBooks`/`experiences` (et sans doute une file d'attente de mutations en attente de sync). Pas encore commencée — pas de décision d'architecture actée à ce stade au-delà de ce qui est déjà dans le brief.
 
 ---
 

@@ -34,6 +34,51 @@ class FakeTravelBookRepository implements TravelBookRepository {
   }
 
   @override
+  Future<PublicTravelBooksPage> fetchPublicTravelBooks({
+    PublicBooksSort sort = PublicBooksSort.recent,
+    String? titlePrefix,
+    int limit = 10,
+    TravelBook? startAfter,
+  }) async {
+    var results = _books.values.where((b) => b.isPublic).toList();
+
+    final trimmedPrefix = titlePrefix?.trim();
+    final searching = trimmedPrefix != null && trimmedPrefix.isNotEmpty;
+    if (searching) {
+      results = results
+          .where((b) => b.title.startsWith(trimmedPrefix))
+          .toList();
+      results.sort((a, b) {
+        final byTitle = a.title.compareTo(b.title);
+        return byTitle != 0 ? byTitle : b.createdAt.compareTo(a.createdAt);
+      });
+    } else {
+      switch (sort) {
+        case PublicBooksSort.recent:
+          results.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        case PublicBooksSort.popular:
+          results.sort((a, b) {
+            final byCount = b.experienceCount.compareTo(a.experienceCount);
+            return byCount != 0 ? byCount : b.createdAt.compareTo(a.createdAt);
+          });
+        case PublicBooksSort.alphabetical:
+          results.sort((a, b) {
+            final byTitle = a.title.compareTo(b.title);
+            return byTitle != 0 ? byTitle : b.createdAt.compareTo(a.createdAt);
+          });
+      }
+    }
+
+    if (startAfter != null) {
+      final cursorIndex = results.indexWhere((b) => b.id == startAfter.id);
+      results = cursorIndex == -1 ? const [] : results.sublist(cursorIndex + 1);
+    }
+
+    final hasMore = results.length > limit;
+    return (books: results.take(limit).toList(), hasMore: hasMore);
+  }
+
+  @override
   Future<String> createTravelBook({
     required String ownerId,
     required String title,
@@ -43,7 +88,11 @@ class FakeTravelBookRepository implements TravelBookRepository {
     required bool isPublic,
   }) async {
     final id = 'book-${_nextId++}';
-    final now = DateTime.now();
+    // Offset by insertion order rather than relying on wall-clock gaps
+    // between calls: tests must never `await Future.delayed(...)` to force
+    // distinct timestamps — that deadlocks under flutter_test's fake clock,
+    // which only advances via `tester.pump`.
+    final now = DateTime.now().add(Duration(microseconds: _nextId));
     _books[id] = TravelBook(
       id: id,
       ownerId: ownerId,

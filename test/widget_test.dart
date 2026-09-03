@@ -7,9 +7,11 @@ import 'package:travelstories/features/authentication/presentation/providers/aut
 import 'package:travelstories/features/authentication/presentation/screens/login_screen.dart';
 import 'package:travelstories/features/authentication/presentation/screens/splash_screen.dart';
 import 'package:travelstories/features/profile/presentation/providers/profile_providers.dart';
+import 'package:travelstories/features/travel_books/presentation/providers/travel_book_providers.dart';
 
 import 'fakes/fake_auth_repository.dart';
 import 'fakes/fake_profile_repository.dart';
+import 'fakes/fake_travel_book_repository.dart';
 
 void main() {
   testWidgets(
@@ -50,6 +52,9 @@ void main() {
             ),
           ),
           profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
+          travelBookRepositoryProvider.overrideWithValue(
+            FakeTravelBookRepository(),
+          ),
         ],
         child: const TravelStoriesApp(),
       ),

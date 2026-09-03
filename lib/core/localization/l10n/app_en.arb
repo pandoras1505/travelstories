@@ -120,5 +120,20 @@
   "locationErrorPermissionDenied": "Location permission denied.",
   "locationErrorPermissionDeniedForever": "Location permission permanently denied. Enable it in Settings.",
   "locationErrorUnknown": "Couldn't get your location.",
-  "commonOpenSettings": "Open settings"
+  "commonOpenSettings": "Open settings",
+
+  "commonByAuthor": "By {name}",
+
+  "homeFeaturedLabel": "Featured",
+  "homeSectionLatest": "Latest published books",
+  "homeEmptyTitle": "No public travel books yet",
+  "homeEmptyMessage": "Check back later, or explore to discover other travelers' books.",
+
+  "exploreSearchHint": "Search a travel book...",
+  "exploreSortRecent": "Recent",
+  "exploreSortPopular": "Popular",
+  "exploreSortAlphabetical": "A-Z",
+  "exploreSortingByTitleWhileSearching": "Sorted by title while searching",
+  "exploreEmptyTitle": "No results",
+  "exploreEmptyMessage": "Try another keyword or a different sort."
 }

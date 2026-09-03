@@ -31,6 +31,15 @@ final currentUserProfileProvider = StreamProvider<UserProfile?>((ref) {
   return ref.watch(profileRepositoryProvider).watchProfile(authUser.uid);
 });
 
+/// One-off lookup of another user's profile — used to render the author of
+/// a public travel book on Home/Explore cards.
+final authorProfileProvider = FutureProvider.family<UserProfile?, String>((
+  ref,
+  uid,
+) {
+  return ref.watch(profileRepositoryProvider).getProfile(uid);
+});
+
 final ensureUserProfileUseCaseProvider = Provider<EnsureUserProfileUseCase>((
   ref,
 ) {

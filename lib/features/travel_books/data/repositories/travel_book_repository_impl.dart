@@ -39,6 +39,46 @@ class TravelBookRepositoryImpl implements TravelBookRepository {
   }
 
   @override
+  Future<PublicTravelBooksPage> fetchPublicTravelBooks({
+    PublicBooksSort sort = PublicBooksSort.recent,
+    String? titlePrefix,
+    int limit = 10,
+    TravelBook? startAfter,
+  }) async {
+    try {
+      final trimmedPrefix = titlePrefix?.trim();
+      final searching = trimmedPrefix != null && trimmedPrefix.isNotEmpty;
+
+      List<Object?>? startAfterValues;
+      if (startAfter != null) {
+        final createdAt = fs.Timestamp.fromDate(startAfter.createdAt);
+        if (searching) {
+          startAfterValues = [startAfter.title, createdAt];
+        } else {
+          startAfterValues = switch (sort) {
+            PublicBooksSort.recent => [createdAt],
+            PublicBooksSort.popular => [startAfter.experienceCount, createdAt],
+            PublicBooksSort.alphabetical => [startAfter.title, createdAt],
+          };
+        }
+      }
+
+      final snapshot = await _firestoreDataSource.fetchPublic(
+        sort: sort,
+        titlePrefix: searching ? trimmedPrefix : null,
+        limit: limit + 1,
+        startAfterValues: startAfterValues,
+      );
+      final docs = snapshot.docs;
+      final hasMore = docs.length > limit;
+      final books = docs.take(limit).map(_toTravelBook).toList();
+      return (books: books, hasMore: hasMore);
+    } on fs.FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    }
+  }
+
+  @override
   Future<String> createTravelBook({
     required String ownerId,
     required String title,

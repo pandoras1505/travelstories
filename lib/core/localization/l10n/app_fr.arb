@@ -122,5 +122,26 @@
   "locationErrorPermissionDenied": "Permission de localisation refusée.",
   "locationErrorPermissionDeniedForever": "Permission de localisation refusée définitivement. Active-la dans les réglages.",
   "locationErrorUnknown": "Impossible d'obtenir ta position.",
-  "commonOpenSettings": "Ouvrir les réglages"
+  "commonOpenSettings": "Ouvrir les réglages",
+
+  "commonByAuthor": "Par {name}",
+  "@commonByAuthor": {
+    "description": "Auteur d'un carnet de voyage public",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "homeFeaturedLabel": "À la une",
+  "homeSectionLatest": "Derniers carnets publiés",
+  "homeEmptyTitle": "Aucun carnet public pour l'instant",
+  "homeEmptyMessage": "Reviens plus tard, ou explore pour découvrir des carnets d'autres voyageurs.",
+
+  "exploreSearchHint": "Rechercher un carnet...",
+  "exploreSortRecent": "Récent",
+  "exploreSortPopular": "Populaire",
+  "exploreSortAlphabetical": "A-Z",
+  "exploreSortingByTitleWhileSearching": "Trié par titre pendant la recherche",
+  "exploreEmptyTitle": "Aucun résultat",
+  "exploreEmptyMessage": "Essaie un autre mot-clé ou change de tri."
 }
