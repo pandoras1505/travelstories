@@ -11,6 +11,7 @@ import '../../../../core/widgets/state_views.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
 import '../../../experiences/domain/entities/experience.dart';
 import '../../../experiences/presentation/providers/experience_providers.dart';
+import '../../../media/presentation/screens/video_viewer_screen.dart';
 import '../../domain/entities/travel_book.dart';
 import '../providers/travel_book_providers.dart';
 
@@ -227,12 +228,22 @@ class _ExperienceCard extends StatelessWidget {
                             fit: BoxFit.cover,
                           )
                         : ColoredBox(color: scheme.surfaceContainerHigh),
-                    if (experience.mediaType == ExperienceMediaType.video)
+                    if (experience.mediaType == ExperienceMediaType.video &&
+                        experience.mediaUrl != null)
                       Center(
-                        child: Icon(
-                          Icons.play_circle_fill,
-                          size: 40,
-                          color: scheme.onSurface.withValues(alpha: 0.85),
+                        child: IconButton(
+                          iconSize: 48,
+                          icon: Icon(
+                            Icons.play_circle_fill,
+                            color: scheme.onSurface.withValues(alpha: 0.85),
+                          ),
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => VideoViewerScreen(
+                                videoUrl: experience.mediaUrl!,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                   ],

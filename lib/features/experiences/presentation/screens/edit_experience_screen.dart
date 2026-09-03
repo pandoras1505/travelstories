@@ -10,6 +10,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../location/domain/entities/geo_position.dart';
 import '../../../location/presentation/location_picking_mixin.dart';
+import '../../../media/presentation/screens/video_viewer_screen.dart';
 import '../../domain/entities/experience.dart';
 import '../controllers/edit_experience_controller.dart';
 import '../media_error_messages.dart';
@@ -348,13 +349,22 @@ class _MediaPreview extends StatelessWidget {
                 fit: BoxFit.cover,
               )
             : ColoredBox(color: scheme.surfaceContainerHigh),
-        Center(
-          child: Icon(
-            Icons.play_circle_fill,
-            size: 48,
-            color: scheme.onSurface.withValues(alpha: 0.85),
+        if (experience.mediaUrl != null)
+          Center(
+            child: IconButton(
+              iconSize: 48,
+              icon: Icon(
+                Icons.play_circle_fill,
+                color: scheme.onSurface.withValues(alpha: 0.85),
+              ),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      VideoViewerScreen(videoUrl: experience.mediaUrl!),
+                ),
+              ),
+            ),
           ),
-        ),
       ],
     );
   }
