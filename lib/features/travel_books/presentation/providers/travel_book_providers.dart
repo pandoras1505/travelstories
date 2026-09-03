@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/database/database_providers.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
 import '../../data/datasources/cover_storage_data_source.dart';
 import '../../data/datasources/travel_book_firestore_data_source.dart';
+import '../../data/datasources/travel_book_local_data_source.dart';
 import '../../data/repositories/travel_book_repository_impl.dart';
 import '../../domain/entities/travel_book.dart';
 import '../../domain/repositories/travel_book_repository.dart';
@@ -15,7 +17,15 @@ import '../../domain/usecases/unpublish_travel_book_usecase.dart';
 import '../../domain/usecases/update_travel_book_usecase.dart';
 import '../../domain/usecases/upload_cover_usecase.dart';
 
+/// Reads `appDatabaseProvider` synchronously via `.requireValue` — safe
+/// because `main()` awaits `openAppDatabase()` and overrides
+/// `appDatabaseProvider` with the already-resolved value before `runApp`
+/// (same pattern as awaiting `Firebase.initializeApp()` first). Tests never
+/// hit this: they override `travelBookRepositoryProvider` directly with a
+/// fake, so this body — and its dependency on `appDatabaseProvider` — never
+/// runs.
 final travelBookRepositoryProvider = Provider<TravelBookRepository>((ref) {
+  final database = ref.watch(appDatabaseProvider).requireValue;
   return TravelBookRepositoryImpl(
     firestoreDataSource: TravelBookFirestoreDataSource(
       firestore: FirebaseFirestore.instance,
@@ -23,6 +33,7 @@ final travelBookRepositoryProvider = Provider<TravelBookRepository>((ref) {
     storageDataSource: CoverStorageDataSource(
       storage: FirebaseStorage.instance,
     ),
+    localDataSource: TravelBookLocalDataSource(database: database),
   );
 });
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/localization/generated/app_localizations.dart';
+import '../../core/widgets/offline_banner.dart';
 
 /// Bottom-navigation shell for the authenticated area (`/app/*`). Each
 /// [NavigationDestination] maps to a [StatefulShellBranch] so per-tab
@@ -16,7 +17,12 @@ class AppShell extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) => navigationShell.goBranch(

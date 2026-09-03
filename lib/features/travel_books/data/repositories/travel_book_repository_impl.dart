@@ -1,23 +1,41 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/offline/local_first_stream.dart';
 import '../../domain/entities/travel_book.dart';
 import '../../domain/repositories/travel_book_repository.dart';
 import '../datasources/cover_storage_data_source.dart';
 import '../datasources/travel_book_firestore_data_source.dart';
+import '../datasources/travel_book_local_data_source.dart';
 
 class TravelBookRepositoryImpl implements TravelBookRepository {
   TravelBookRepositoryImpl({
     required TravelBookFirestoreDataSource firestoreDataSource,
     required CoverStorageDataSource storageDataSource,
+    required TravelBookLocalDataSource localDataSource,
   }) : _firestoreDataSource = firestoreDataSource,
-       _storageDataSource = storageDataSource;
+       _storageDataSource = storageDataSource,
+       _localDataSource = localDataSource;
 
   final TravelBookFirestoreDataSource _firestoreDataSource;
   final CoverStorageDataSource _storageDataSource;
+  final TravelBookLocalDataSource _localDataSource;
 
+  /// Local-first: emits the cached copy immediately (works offline, and
+  /// paints instantly instead of waiting on Firestore's first snapshot),
+  /// then live Firestore updates, mirroring each one into the cache. Falls
+  /// back to the cache silently if Firestore can't be reached, as long as
+  /// there was something cached to fall back to.
   @override
-  Stream<List<TravelBook>> watchMyTravelBooks(String ownerId) async* {
+  Stream<List<TravelBook>> watchMyTravelBooks(String ownerId) {
+    return localFirstStream<TravelBook>(
+      readCache: () => _localDataSource.getByOwner(ownerId),
+      watchRemote: () => _watchMyTravelBooksRemote(ownerId),
+      onRemoteData: (books) => _reconcileOwnerCache(ownerId, books),
+    );
+  }
+
+  Stream<List<TravelBook>> _watchMyTravelBooksRemote(String ownerId) async* {
     try {
       await for (final snapshot in _firestoreDataSource.watchByOwner(ownerId)) {
         yield snapshot.docs.map(_toTravelBook).toList();
@@ -27,8 +45,35 @@ class TravelBookRepositoryImpl implements TravelBookRepository {
     }
   }
 
+  /// Upserts the fresh set and drops any cached book for [ownerId] that
+  /// Firestore no longer returned (deleted elsewhere while this client
+  /// was offline).
+  Future<void> _reconcileOwnerCache(
+    String ownerId,
+    List<TravelBook> freshBooks,
+  ) async {
+    await _localDataSource.upsertAll(freshBooks);
+    final freshIds = freshBooks.map((b) => b.id).toSet();
+    final cached = await _localDataSource.getByOwner(ownerId);
+    for (final book in cached) {
+      if (!freshIds.contains(book.id)) {
+        await _localDataSource.delete(book.id);
+      }
+    }
+  }
+
   @override
-  Stream<TravelBook?> watchTravelBook(String id) async* {
+  Stream<TravelBook?> watchTravelBook(String id) {
+    return localFirstSingleStream<TravelBook>(
+      readCache: () => _localDataSource.getById(id),
+      watchRemote: () => _watchTravelBookRemote(id),
+      onRemoteData: (book) => book == null
+          ? _localDataSource.delete(id)
+          : _localDataSource.upsert(book),
+    );
+  }
+
+  Stream<TravelBook?> _watchTravelBookRemote(String id) async* {
     try {
       await for (final snapshot in _firestoreDataSource.watch(id)) {
         yield snapshot.exists ? _toTravelBook(snapshot) : null;

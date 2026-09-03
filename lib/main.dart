@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app.dart';
+import 'core/database/app_database.dart';
+import 'core/database/database_providers.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final database = await openAppDatabase();
 
   if (!kIsWeb) {
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -19,5 +22,10 @@ Future<void> main() async {
     };
   }
 
-  runApp(const ProviderScope(child: TravelStoriesApp()));
+  runApp(
+    ProviderScope(
+      overrides: [appDatabaseProvider.overrideWithValue(AsyncData(database))],
+      child: const TravelStoriesApp(),
+    ),
+  );
 }

@@ -1,23 +1,41 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/offline/local_first_stream.dart';
 import '../../domain/entities/experience.dart';
 import '../../domain/repositories/experience_repository.dart';
 import '../datasources/experience_firestore_data_source.dart';
+import '../datasources/experience_local_data_source.dart';
 import '../datasources/experience_media_storage_data_source.dart';
 
 class ExperienceRepositoryImpl implements ExperienceRepository {
   ExperienceRepositoryImpl({
     required ExperienceFirestoreDataSource dataSource,
     required ExperienceMediaStorageDataSource mediaStorageDataSource,
+    required ExperienceLocalDataSource localDataSource,
   }) : _dataSource = dataSource,
-       _mediaStorageDataSource = mediaStorageDataSource;
+       _mediaStorageDataSource = mediaStorageDataSource,
+       _localDataSource = localDataSource;
 
   final ExperienceFirestoreDataSource _dataSource;
   final ExperienceMediaStorageDataSource _mediaStorageDataSource;
+  final ExperienceLocalDataSource _localDataSource;
 
+  /// Local-first: see `TravelBookRepositoryImpl.watchMyTravelBooks` for the
+  /// same pattern — cache emitted immediately, then live Firestore updates
+  /// mirrored into the cache, falling back to the cache silently if
+  /// Firestore can't be reached.
   @override
-  Stream<List<Experience>> watchExperiences(String travelBookId) async* {
+  Stream<List<Experience>> watchExperiences(String travelBookId) {
+    return localFirstStream<Experience>(
+      readCache: () => _localDataSource.getByTravelBook(travelBookId),
+      watchRemote: () => _watchExperiencesRemote(travelBookId),
+      onRemoteData: (experiences) =>
+          _reconcileBookCache(travelBookId, experiences),
+    );
+  }
+
+  Stream<List<Experience>> _watchExperiencesRemote(String travelBookId) async* {
     try {
       await for (final snapshot in _dataSource.watchAll(travelBookId)) {
         yield snapshot.docs.map(_toExperience).toList();
@@ -27,8 +45,38 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
     }
   }
 
+  /// Upserts the fresh set and drops any cached experience for
+  /// [travelBookId] that Firestore no longer returned.
+  Future<void> _reconcileBookCache(
+    String travelBookId,
+    List<Experience> freshExperiences,
+  ) async {
+    await _localDataSource.upsertAll(freshExperiences);
+    final freshIds = freshExperiences.map((e) => e.id).toSet();
+    final cached = await _localDataSource.getByTravelBook(travelBookId);
+    for (final experience in cached) {
+      if (!freshIds.contains(experience.id)) {
+        await _localDataSource.delete(experience.id);
+      }
+    }
+  }
+
   @override
   Stream<Experience?> watchExperience({
+    required String travelBookId,
+    required String id,
+  }) {
+    return localFirstSingleStream<Experience>(
+      readCache: () => _localDataSource.getById(id),
+      watchRemote: () =>
+          _watchExperienceRemote(travelBookId: travelBookId, id: id),
+      onRemoteData: (experience) => experience == null
+          ? _localDataSource.delete(id)
+          : _localDataSource.upsert(experience),
+    );
+  }
+
+  Stream<Experience?> _watchExperienceRemote({
     required String travelBookId,
     required String id,
   }) async* {

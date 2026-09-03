@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/database/database_providers.dart';
 import '../../../media/media_processor.dart';
 import '../../../media/media_service.dart';
 import '../../data/datasources/experience_firestore_data_source.dart';
+import '../../data/datasources/experience_local_data_source.dart';
 import '../../data/datasources/experience_media_storage_data_source.dart';
 import '../../data/repositories/experience_repository_impl.dart';
 import '../../domain/entities/experience.dart';
@@ -15,7 +17,10 @@ import '../../domain/usecases/remove_experience_media_usecase.dart';
 import '../../domain/usecases/update_experience_usecase.dart';
 import '../../domain/usecases/upload_experience_media_usecase.dart';
 
+/// See `travelBookRepositoryProvider` for why `.requireValue` is safe here
+/// and why tests never actually run this body.
 final experienceRepositoryProvider = Provider<ExperienceRepository>((ref) {
+  final database = ref.watch(appDatabaseProvider).requireValue;
   return ExperienceRepositoryImpl(
     dataSource: ExperienceFirestoreDataSource(
       firestore: FirebaseFirestore.instance,
@@ -23,6 +28,7 @@ final experienceRepositoryProvider = Provider<ExperienceRepository>((ref) {
     mediaStorageDataSource: ExperienceMediaStorageDataSource(
       storage: FirebaseStorage.instance,
     ),
+    localDataSource: ExperienceLocalDataSource(database: database),
   );
 });
 

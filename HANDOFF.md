@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-03, fin de la **Phase 10** (SQLite).
+Dernière mise à jour : 2026-09-03, fin de la **Phase 11** (Offline-first).
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan (README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT restent à créer, voir "Dette de documentation" en bas).
 
 ---
@@ -29,8 +29,8 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 8 | Video Player | ✅ |
 | 9 | Home Feed + Explore | ✅ |
 | 10 | SQLite | ✅ |
-| 11 | Offline-first | ⬜ **prochaine étape** |
-| 12 | Synchronization Engine | ⬜ |
+| 11 | Offline-first | ✅ |
+| 12 | Synchronization Engine | ⬜ **prochaine étape** |
 | 13 | Security Rules (audit complet) | ⬜ (règles de base déjà écrites et déployées au fil de l'eau, Phase 13 = revue/durcissement) |
 | 14 | Tests (suite complète) | ⬜ (tests déjà écrits au fil de l'eau, voir §7) |
 | 15 | Performance | ⬜ |
@@ -50,7 +50,10 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 - **Localisation (lieu, pas i18n)** : `latitude`/`longitude` sont optionnels partout — la saisie manuelle du nom de lieu fonctionne sans position GPS ; "utiliser ma position" et "choisir sur la carte" (Phase 7) sont des compléments, pas des prérequis.
 - **i18n texte** : fr/en via `flutter gen-l10n`, fichiers sources dans `lib/core/localization/l10n/app_{fr,en}.arb`, généré dans `lib/core/localization/generated/` (gitignored, régénéré à chaque `flutter pub get`/build grâce à `generate: true` dans pubspec.yaml).
 - **Tests** : jamais de faux/mocks du SDK Firebase — chaque repository a un *fake* maison en mémoire dans `test/fakes/` implémentant l'interface du domaine (`FakeAuthRepository`, `FakeProfileRepository`, `FakeTravelBookRepository`, `FakeExperienceRepository`). Les tests widgets passent ces fakes via `ProviderScope(overrides: [...])`.
-- **SQLite** : `sqflite` (mobile réel) + `sqflite_common_ffi` en dev-dependency pour les tests (voir §4.6). Schéma en snake_case, un `*LocalDataSource` par feature (miroir des `*FirestoreDataSource`) qui mappe lignes ↔ entités lui-même — pas de repository local séparé pour l'instant, ni de couche d'abstraction supplémentaire : ces data sources ne sont pas encore branchées sur les repositories existants (ça, c'est le travail de la Phase 11 "Offline-first"). Voir §10.
+- **SQLite** : `sqflite` (mobile réel) + `sqflite_common_ffi` en dev-dependency pour les tests (voir §4.6). Schéma en snake_case, un `*LocalDataSource` par feature (miroir des `*FirestoreDataSource`) qui mappe lignes ↔ entités lui-même — pas de repository local séparé pour l'instant, ni de couche d'abstraction supplémentaire. Voir §11.
+- **Offline-first = lectures locale-first, pas encore d'écritures hors-ligne** : `TravelBookRepositoryImpl`/`ExperienceRepositoryImpl` émettent le cache SQLite immédiatement puis les mises à jour Firestore en direct (miroir dans le cache à chaque snapshot, y compris réconciliation des suppressions). Les écritures (create/update/delete/publish...) continuent d'aller directement à Firestore, inchangées — si le SDK Firestore est hors-ligne, l'écriture reste juste en attente indéfiniment côté SDK (pas de file de mutation propre côté app). Une vraie file de mutations avec retry/résolution de conflits est le travail de la Phase 12 (Synchronization Engine), volontairement pas mélangé ici. Voir §12.
+- **Logique offline extraite et testée à part** : `lib/core/offline/local_first_stream.dart` (`localFirstStream`/`localFirstSingleStream`) encapsule le pattern "cache immédiat → flux distant en direct → fallback silencieux sur le cache si le distant échoue". Extrait exprès dans un utilitaire Dart pur (aucun type Firebase) pour pouvoir le tester unitairement sans violer la règle "jamais de faux SDK Firebase" (voir plus haut) — les repositories eux-mêmes restent non testés unitairement, comme le reste de leurs méthodes.
+- **Connectivité** : `ConnectivityService` (interface) / `ConnectivityPlusService` (impl réelle, `connectivity_plus`) / `FakeConnectivityService` (tests). `isOnlineProvider` pilote `OfflineBanner` (bandeau "Vous êtes hors ligne" / "Connexion rétablie. Synchronisation..." dans `AppShell`, au-dessus des onglets). `connectivity_plus` ne vérifie que l'état de l'interface réseau, pas la joignabilité réelle d'Internet — suffisant pour cet usage (décider si Firestore a une chance de répondre), pas un vrai ping de reachability.
 
 ## 4. Contraintes d'environnement découvertes (important, relire avant de perdre du temps à les re-découvrir)
 
@@ -63,6 +66,8 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 6. **Ne jamais `await Future.delayed(...)` dans un corps de `testWidgets`** : l'horloge du binding de test (`flutter_test`) n'avance que via `tester.pump(duration)` — un `Future.delayed` réel reste en attente indéfiniment et bloque le test (repéré Phase 9 : un test seedant deux carnets avec un `Future.delayed(5ms)` entre les deux pour forcer des `createdAt` distincts a fait planter toute la suite pendant ~10 min avant timeout). Pour des timestamps distincts dans un fake, décaler par ordre d'insertion (voir `FakeTravelBookRepository.createTravelBook`), jamais par une vraie pause.
 7. **Les listes lazy (`ListView`/`SliverList` dans un `CustomScrollView`) ne construisent que les items visibles dans le viewport de test** (par défaut 800×600) : un `find.text(...)` sur un item plus bas dans une longue liste renvoie `findsNothing` même s'il existe dans les données. Pour un test qui doit voir toute une liste courte sans scroller, agrandir la surface : `tester.view.physicalSize = const Size(800, 2400); tester.view.devicePixelRatio = 1.0;` (+ `addTearDown` pour les deux resets) plutôt que de scroller manuellement.
 8. **`sqflite` fonctionne en test, contrairement à Android/iOS (§4.1)** : `sqflite_common_ffi` (SQLite via FFI, pur Dart) tourne sans problème dans cet environnement — vérifié explicitement avant de se lancer dans la Phase 10, car ça aurait pu être bloqué par la même politique réseau que Gradle. `sqfliteFfiInit(); databaseFactory = databaseFactoryFfi;` en `setUpAll`, puis `openAppDatabase(path: inMemoryDatabasePath)` (voir `test/core/database/sqflite_test_setup.dart`). Donc, contrairement à geolocator/video_player, la couche SQLite EST testable en conditions quasi réelles ici.
+9. **Annuler l'abonnement à un `Stream` généré par `async*` alors qu'il est suspendu dans un `await for` sur un `StreamController` encore ouvert (et sans nouvel événement) bloque indéfiniment `subscription.cancel()`** — repéré en testant `local_first_stream.dart` : `await subscription.cancel()` ne se résolvait jamais tant que le `StreamController` distant n'était pas fermé. Toujours fermer le controller "distant" AVANT d'annuler l'abonnement au stream généré, jamais l'inverse, dans ce genre de test (`await remoteController.close(); await subscription.cancel();`).
+10. **Un appel à un platform channel sans handler enregistré dans `flutter_test` (ex. `connectivity_plus` sans override) ne fait PAS planter le widget test** : Riverpod absorbe l'exception (`MissingPluginException` ou équivalent) dans l'état `AsyncError` du provider, donc un widget qui lit la valeur via `.value` (nullable) plutôt que `.requireValue`/`!` s'en sort avec un état "vide/neutre" sans crash ni override nécessaire dans les tests existants. Vérifié explicitement pour `OfflineBanner`/`isOnlineProvider` — aucun test existant n'a eu besoin d'un `connectivityServiceProvider.overrideWithValue(...)`.
 
 ## 5. État Firebase (projet `travelstories-app`)
 
@@ -86,7 +91,7 @@ flutter analyze
 flutter test
 ```
 
-Dernier statut connu (fin Phase 10) : `flutter analyze` → 0 issue, `flutter test` → **35/35** tests verts.
+Dernier statut connu (fin Phase 11) : `flutter analyze` → 0 issue, `flutter test` → **44/44** tests verts.
 
 ## 7. Tests existants
 
@@ -100,6 +105,8 @@ Dernier statut connu (fin Phase 10) : `flutter analyze` → 0 issue, `flutter te
 - `test/fakes/` — un fake par repository (Auth/Profile/TravelBook/Experience), tous en mémoire, aucun SDK Firebase touché. `FakeTravelBookRepository.fetchPublicTravelBooks` réimplémente tri/filtre/pagination en mémoire (miroir de la logique Firestore réelle) — si la logique de tri/pagination de `TravelBookRepositoryImpl` change, penser à répercuter le changement dans le fake.
 - `test/core/database/app_database_test.dart` — création du schéma (tables + index).
 - `test/features/travel_books/travel_book_local_data_source_test.dart` et `test/features/experiences/experience_local_data_source_test.dart` — round-trip upsert/getById (tous les champs, y compris nullable/géo), tri, filtre, delete, clear. Ceux-là tournent contre une vraie base SQLite en mémoire (`sqflite_common_ffi`, voir §4.8), pas un fake.
+- `test/core/offline/local_first_stream_test.dart` — le cœur de la logique offline-first (cache immédiat, bascule vers le flux distant, fallback silencieux sur erreur si un cache existait, propagation de l'erreur sinon) : 7 tests, Dart pur, aucun type Firebase.
+- `test/core/widgets/offline_banner_test.dart` — bandeau masqué en ligne, affiché hors ligne sans auto-dismiss, bandeau "reconnecté" temporisé (3s) après un retour en ligne. Utilise `FakeConnectivityService`.
 
 Aucun test dédié pour : geolocator/carte (Phase 7) ni video_player (Phase 8) — plugins natifs sans moyen réaliste de les exercer en environnement de test headless. Idem pour toute vérification "live" Firebase (voir §4).
 
@@ -137,9 +144,22 @@ Fondation pure : schéma local + accès CRUD, **rien de branché sur les reposit
 - **Data sources locales** (une par feature, miroir des `*FirestoreDataSource`) : `TravelBookLocalDataSource` et `ExperienceLocalDataSource` — `upsert`/`upsertAll` (`ConflictAlgorithm.replace`), `getById`, `getByOwner`/`getByTravelBook` (mêmes tris que les repositories Firestore existants), `delete`, `clear`. Elles font le mapping ligne SQLite ↔ entité domaine elles-mêmes (pas de repository local intermédiaire pour l'instant) et laissent les exceptions `sqflite` se propager telles quelles (comme les data sources Firestore le font avec `FirebaseException`) — le mapping vers `DatabaseException` (déjà dans `app_exception.dart`, inutilisé jusqu'ici) se fera à la Phase 11 quand un repository lira réellement à travers ces data sources.
 - **Pas de file d'attente de mutations/sync** dans cette phase — évoqué comme possible dans le résumé précédent mais explicitement repoussé : ça relève de la Phase 11 (offline-first) ou 12 (moteur de sync), pas de "SQLite" tout seul.
 
-## 12. Prochaine étape : Phase 11 — Offline-first
+## 12. Phase 11 — ce qui a été livré (Offline-first)
 
-Brancher les repositories existants (`TravelBookRepositoryImpl`, `ExperienceRepositoryImpl`) sur les data sources locales de la Phase 10 : lecture locale-first avec rafraîchissement Firestore en arrière-plan, écritures qui passent par SQLite immédiatement (UI réactive hors-ligne) puis Firestore quand la connexion revient. Pas de décision d'architecture actée à ce stade (stratégie exacte de résolution de conflits, détection de connectivité, etc.) au-delà de ce qui est déjà dans le brief — à concevoir en début de phase.
+Portée délibérément limitée aux **lectures** : on peut consulter ses carnets/expériences hors-ligne, et l'app sait afficher qu'elle est hors-ligne. Les **écritures** hors-ligne (créer/éditer en avion, sync différée fiable) restent le travail de la Phase 12 — mélanger les deux aurait fait de "Offline-first" et "Synchronization Engine" une seule et même phase, ce que le roadmap du brief ne prévoit pas.
+
+- **`lib/core/offline/local_first_stream.dart`** : `localFirstStream<T>`/`localFirstSingleStream<T>` — utilitaire Dart pur générique (voir §3). Émet le cache dès que possible, puis les mises à jour distantes (en les écrivant dans le cache au passage), et avale une erreur distante tant qu'un cache existait pour ne pas remplacer un affichage utile par un écran d'erreur.
+- **`TravelBookRepositoryImpl.watchMyTravelBooks`/`watchTravelBook`** et **`ExperienceRepositoryImpl.watchExperiences`/`watchExperience`** : réécrits avec `localFirstStream`/`localFirstSingleStream`, en s'appuyant sur les `*LocalDataSource` de la Phase 10. Chaque snapshot Firestore frais est mirroré dans SQLite (`upsertAll`) puis réconcilié (les lignes locales qui ne sont plus dans le snapshot frais — supprimées côté serveur pendant que le client était hors-ligne — sont effacées localement). `fetchPublicTravelBooks` (Home/Explore) n'est **pas** concerné — voir plus bas.
+- **`main.dart`** : `openAppDatabase()` est maintenant attendu avant `runApp` (même schéma que `Firebase.initializeApp()`), et `appDatabaseProvider` est overridé avec la valeur déjà résolue (`AsyncData(database)`). Les repositories la lisent avec `.requireValue` — sûr par construction, et les tests ne touchent jamais ce chemin puisqu'ils overrident `travelBookRepositoryProvider`/`experienceRepositoryProvider` directement avec un fake.
+- **Connectivité** : `ConnectivityService`/`ConnectivityPlusService`/`FakeConnectivityService` + `isOnlineProvider`, et `OfflineBanner` câblé dans `AppShell` (au-dessus de `navigationShell`) — réutilise les chaînes `commonOffline`/`commonBackOnline` qui existaient déjà dans les `.arb` mais n'étaient utilisées nulle part avant cette phase.
+- **Scope explicitement exclu** (repoussé à la Phase 12, "Synchronization Engine") :
+  - Écritures hors-ligne : `createTravelBook`/`updateTravelBook`/`deleteExperience`/etc. vont toujours directement à Firestore ; si le SDK est hors-ligne, l'appel reste juste en attente (pas de queue de mutations côté app, pas de complétion optimiste immédiate).
+  - Résolution de conflits (deux appareils modifient le même carnet hors-ligne).
+  - Cache offline du flux public (Home/Explore) : `fetchPublicTravelBooks` reste 100% Firestore — parcourir les carnets d'autres utilisateurs hors-ligne n'est pas le cas d'usage central d'un carnet de voyage personnel, et répliquer la pagination/tri/recherche contre le cache local aurait été une pièce d'architecture à part entière.
+
+## 13. Prochaine étape : Phase 12 — Synchronization Engine
+
+Vraie prise en charge des écritures hors-ligne : file de mutations persistée (probablement une table SQLite dédiée, ex. `pending_mutations`), rejouée automatiquement au retour de connectivité (`isOnlineProvider` de la Phase 11 donne déjà le signal), avec une stratégie de résolution de conflits à définir (last-write-wins ? merge de champs ? détection au niveau `updatedAt` ?). Pas de décision d'architecture actée à ce stade au-delà de ce qui est déjà dans le brief — à concevoir en début de phase.
 
 ---
 
