@@ -28,11 +28,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    ref
+    final sent = await ref
         .read(forgotPasswordControllerProvider.notifier)
         .sendResetLink(email: _emailController.text.trim());
+    if (sent && mounted) setState(() => _sent = true);
   }
 
   @override
@@ -49,8 +50,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ..showSnackBar(
             SnackBar(content: Text(authErrorMessage(context, error))),
           );
-      } else if (previous is AsyncLoading && next is AsyncData) {
-        setState(() => _sent = true);
       }
     });
 

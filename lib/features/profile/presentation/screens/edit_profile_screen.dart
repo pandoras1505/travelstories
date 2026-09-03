@@ -44,9 +44,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ? picked.name.split('.').last
         : 'jpg';
     if (!mounted) return;
-    await ref
+    final saved = await ref
         .read(editProfileControllerProvider.notifier)
         .uploadAvatar(fileBytes: bytes, fileExtension: extension);
+    if (saved && mounted) _showSavedSnackbar();
   }
 
   void _showAvatarPicker() {
@@ -73,11 +74,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    ref
+    final saved = await ref
         .read(editProfileControllerProvider.notifier)
         .saveDisplayName(_displayNameController.text.trim());
+    if (saved && mounted) _showSavedSnackbar();
+  }
+
+  void _showSavedSnackbar() {
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l10n.profileSaved)));
   }
 
   @override
@@ -99,10 +108,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(l10n.commonError)));
-      } else if (previous is AsyncLoading && next is AsyncData) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(l10n.profileSaved)));
       }
     });
 

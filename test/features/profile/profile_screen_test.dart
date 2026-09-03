@@ -49,10 +49,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(EditProfileScreen), findsOneWidget);
+    // Regression check: the "saved" confirmation used to fire as soon as
+    // this screen opened, before any save — the controller's own initial
+    // build resolving looked identical to a real save completing.
+    expect(find.byType(SnackBar), findsNothing);
 
     await tester.enterText(find.byType(TextFormField), 'Amina');
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
+
+    expect(find.byType(SnackBar), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

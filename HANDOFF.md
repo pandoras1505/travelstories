@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-03, fin de la **Phase 13** (Security Rules audit).
+Dernière mise à jour : 2026-09-03, fin de la **Phase 14** (Tests suite complète).
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan (README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT restent à créer, voir "Dette de documentation" en bas).
 
 ---
@@ -32,8 +32,8 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 11 | Offline-first | ✅ |
 | 12 | Synchronization Engine | ✅ (écritures uniquement — voir §14 pour le scope exact) |
 | 13 | Security Rules (audit complet) | ✅ (voir §16 — une faille réelle corrigée côté Storage) |
-| 14 | Tests (suite complète) | ⬜ **prochaine étape** (tests déjà écrits au fil de l'eau, voir §7) |
-| 15 | Performance | ⬜ |
+| 14 | Tests (suite complète) | ✅ (2 vrais bugs corrigés au passage — voir §18) |
+| 15 | Performance | ⬜ **prochaine étape** |
 | 16 | CI/CD | ⬜ |
 | 17 | Documentation | ⬜ |
 | 18 | Production Readiness Review | ⬜ |
@@ -59,6 +59,8 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 - **Scope du moteur de sync = documents seulement, pas les médias** : `uploadCover`/`uploadMedia`/`removeMedia` ne passent PAS par la file de mutations, ils vont toujours directement à Storage (comme avant la Phase 12). Storage n'est de toute façon pas encore activé (§4.3) — mettre en file des uploads de fichiers binaires hors-ligne (bytes à persister, retry resumable) est un problème sensiblement différent, repoussé jusqu'à ce que Storage soit réellement utilisable.
 - **`users/{uid}` ne stocke plus `email`** (retiré Phase 13, audit sécurité) : ce document est lisible par n'importe quel utilisateur connecté (jointure auteur sur les cartes de carnets publics, Phase 9), donc rien de sensible ne doit y résider. L'email du user courant est lu depuis `AuthUser` (Auth SDK, déjà disponible) plutôt que dupliqué dans Firestore — `ProfileScreen` lit maintenant `authStateChangesProvider` pour l'afficher, pas `UserProfile`. Les règles interdisent explicitement la clé `email` en écriture (`!('email' in request.resource.data.keys())`) comme garde-fou contre une régression future.
 - **Champs immuables imposés par les règles Firestore, pas seulement par convention côté app** : `ownerId`/`createdAt` sur `travelBooks`, `travelBookId`/`ownerId`/`createdAt` sur `experiences` — un `update` qui tenterait de les changer est refusé. `experienceCount` ne peut varier que de ±1 par écriture (jamais sauté à une valeur arbitraire) et ne peut pas être négatif. Nécessaire parce qu'un carnet `isPublic` expose `createdAt`/`experienceCount` comme signaux de tri dans Home/Explore (Phase 9) — sans ça, un propriétaire malveillant pourrait se faire artificiellement passer pour "récent" ou "populaire" via un appel Firestore direct (hors app).
+- **Un contrôleur `AsyncNotifier<void>` ne doit jamais signaler "l'action a réussi" via `ref.listen((previous, next) => previous is AsyncLoading && next is AsyncData)`** : la toute première résolution du `build()` du contrôleur (même vide, `async {}`) produit *exactement* cette même transition, donc ce test se déclenche aussi à l'ouverture de l'écran, avant toute action utilisateur. Repéré (et corrigé) Phase 14 sur deux écrans — voir §18. Le bon pattern, déjà utilisé ailleurs dans le code (`CreateTravelBookController.create`) : la méthode du contrôleur retourne directement `Future<bool>` (ou l'id créé, etc.), et l'écran agit sur cette valeur retournée après l'avoir attendue — jamais en déduisant le succès de la forme de la transition d'état.
+- **`LocationRepository` (Phase 7) est testable malgré l'absence de geolocator/geocoding en environnement headless** : contrairement à ce que les phases précédentes supposaient ("aucun test possible pour Phase 7"), le `LocationPickingMixin` et les écrans qui l'utilisent ne parlent qu'à l'interface `LocationRepository` — un `FakeLocationRepository` (Phase 14) suffit à exercer "utiliser ma position" (succès et échec) sans jamais toucher au plugin réel. Seul le rendu de carte (`flutter_map`, dans `location_picker_screen.dart`/`experience_map_preview.dart`) et la vidéo (`video_player`/`chewie`, sans interface de domaine équivalente) restent réellement hors de portée ici.
 
 ## 4. Contraintes d'environnement découvertes (important, relire avant de perdre du temps à les re-découvrir)
 
@@ -98,7 +100,7 @@ flutter analyze
 flutter test
 ```
 
-Dernier statut connu (fin Phase 13) : `flutter analyze` → 0 issue, `flutter test` → **55/55** tests verts (aucun nouveau test cette phase — voir §4.12, les règles ne sont pas exécutables ici).
+Dernier statut connu (fin Phase 14) : `flutter analyze` → 0 issue, `flutter test` → **69/69** tests verts.
 
 ## 7. Tests existants
 
@@ -116,8 +118,12 @@ Dernier statut connu (fin Phase 13) : `flutter analyze` → 0 issue, `flutter te
 - `test/core/widgets/offline_banner_test.dart` — bandeau masqué en ligne, affiché hors ligne sans auto-dismiss, bandeau "reconnecté" temporisé (3s) après un retour en ligne. Utilise `FakeConnectivityService`.
 - `test/core/sync/pending_mutations_local_data_source_test.dart` — FIFO, round-trip JSON du payload (y compris valeurs nulles/imbriquées), `remove`, `count`. Vraie base SQLite en mémoire.
 - `test/core/sync/sync_engine_test.dart` — 6 tests, Dart pur (appliers injectés en fonctions, aucun type Firebase) : succès + retrait de la file, pas d'appel hors-ligne puis flush au retour de connexion, arrêt à la première erreur avec ordre préservé, mutation sans applier enregistré abandonnée plutôt que de bloquer la file, timeout d'un applier qui ne répond jamais, appels `flush()` concurrents coalescés (un seul passage réel).
+- `test/core/utils/validation_messages_test.dart`, `test/features/authentication/auth_error_messages_test.dart`, `test/features/experiences/media_error_messages_test.dart`, `test/features/location/location_error_messages_test.dart`, `test/features/profile/profile_error_messages_test.dart` — les 5 fonctions de mapping "code d'erreur → message localisé" de l'app, chacune exhaustivement (tous les codes connus + le cas par défaut), en comparant contre le getter `l10n.xxx` attendu plutôt qu'une chaîne en dur (indépendant de la langue). Toutes untested avant la Phase 14 malgré leur usage sur quasiment tous les écrans avec formulaire.
+- `test/features/authentication/login_screen_test.dart`, `register_screen_test.dart`, `forgot_password_screen_test.dart` — chemins heureux (connexion/inscription/envoi réussis) et d'erreur (identifiants invalides, email déjà utilisé, etc.), via `FakeAuthRepository.nextError` (nouveau champ, Phase 14 — fait échouer le prochain appel mutant puis se réinitialise). Auparavant les 3 écrans d'authentification n'avaient aucun test dédié.
+- `test/features/travel_books/edit_travel_book_flow_test.dart` — édition titre/description, bascule publier/dépublier, suppression avec confirmation (annuler puis confirmer). Le flux de création avait un test ; celui d'édition n'en avait aucun.
+- `test/features/experiences/location_picking_test.dart` — "utiliser ma position" (succès : remplit le champ lieu depuis le nom géocodé ; échec : message d'erreur mappé, champ inchangé), via un nouveau `FakeLocationRepository`. Voir §3 : contrairement à ce qu'on pensait, cette logique EST testable sans le plugin geolocator réel.
 
-Aucun test dédié pour : geolocator/carte (Phase 7) ni video_player (Phase 8) — plugins natifs sans moyen réaliste de les exercer en environnement de test headless. Idem pour toute vérification "live" Firebase (voir §4).
+Aucun test dédié pour : le rendu de carte (`flutter_map`, Phase 7) ni video_player (Phase 8) — ceux-là touchent vraiment un plugin natif sans interface de domaine substituable, contrairement à `LocationRepository` (voir §3). Idem pour toute vérification "live" Firebase (voir §4).
 
 ## 8. Dette connue / actions en attente côté utilisateur
 
@@ -194,9 +200,25 @@ Relecture complète de `firestore.rules`/`storage.rules` contre ce que le code �
 - **Déploiement** : `firestore.rules` déployées (confirmation utilisateur demandée avant, comme pour les index en Phase 9) — compilation Firestore réussie côté serveur, c'est la seule validation "réelle" obtenue vu qu'aucun test exécutable n'était possible (§4.12). `storage.rules` reste non déployé — le déploiement échouera tant que Storage n'est pas activé (Blaze, voir §4.3/§8) ; à déployer avec `firebase deploy --only storage` une fois Storage activé.
 - **Hors scope, noté mais pas corrigé** : nettoyage rétroactif des documents `users/{uid}` live qui auraient déjà un champ `email` (voir §8) ; pas de limite de taux/anti-abus (Firestore/Storage n'offrent pas de rate-limiting natif dans les règles elles-mêmes — ce serait un sujet Cloud Functions, hors scope du brief actuel).
 
-## 17. Prochaine étape : Phase 14 — Tests (suite complète)
+## 17. Phase 14 — ce qui a été livré (Tests suite complète)
 
-Les tests ont été écrits au fil de l'eau à chaque phase (voir §7, 55 tests). Cette phase consiste probablement à combler les trous connus plutôt qu'à tout reprendre : pas de test pour geolocator/carte (Phase 7) ni video_player (Phase 8) — plugins natifs non exerçables en environnement headless (§4) — et aucune vérification "live" Firebase possible non plus. Pas de décision d'architecture actée à ce stade au-delà de ce qui est déjà dans le brief ; à voir si la phase consiste à ajouter de la couverture (laquelle, vu les limitations d'environnement ?) ou à documenter/accepter ces trous comme définitifs.
+Comblé les trous les plus visibles plutôt que viser une couverture exhaustive : 14 nouveaux tests (55 → 69), répartis sur 9 nouveaux fichiers + 1 fichier existant étendu (voir §7 pour le détail). Deux vrais bugs (pas des artefacts de test) trouvés et corrigés au passage — voir §18. Pas de nouvelle dépendance.
+
+- **Les 5 mappers "code d'erreur → message localisé"** (`auth`/`media`/`location`/`storage` + `validation_messages` générique) étaient tous non testés malgré leur usage omniprésent — un futur ajout de code d'erreur sans le mapper correspondant (ou un `switch` mal branché) serait passé inaperçu jusqu'en production.
+- **Les 3 écrans d'authentification** (login/register/forgot-password) n'avaient aucun test — `FakeAuthRepository` gagne un champ `nextError` pour simuler un échec ponctuel (identifiants invalides, email déjà utilisé, etc.) sans toucher au SDK Firebase.
+- **Le flux d'édition de carnet** (titre/description, publier/dépublier, suppression avec confirmation) n'était pas exercé — seule la création l'était.
+- **`LocationRepository` s'est révélé testable** contrairement à l'hypothèse des phases précédentes — voir §3 pour le détail architectural (l'interface isole proprement le plugin natif).
+- **Périmètre volontairement pas étendu à** : le "load more" / scroll infini de Home/Explore (`HomeFeedController.loadMore`/`ExploreController.loadMore` restent exercés seulement indirectement par leur premier chargement) ; le rendu de carte et video_player (toujours hors de portée, voir §7) ; toute vérification "live" Firebase (§4). Coverage jugée suffisante à ce stade plutôt que 100% — peut être repris plus tard si un bug s'y manifeste.
+
+## 18. Bugs réels trouvés et corrigés pendant la Phase 14
+
+Deux écrans (`ForgotPasswordScreen`, `EditProfileScreen`) montraient leur confirmation de succès ("Email envoyé", "Profil enregistré") **dès l'ouverture de l'écran**, avant toute action de l'utilisateur — repéré par un test qui échouait de façon inattendue (`find.byType(TextFormField)` ne trouvait plus rien juste après avoir navigué vers l'écran, parce que celui-ci avait déjà basculé en mode "confirmation"). Cause : les deux écrans déduisaient le succès d'une action via `ref.listen((previous, next) => previous is AsyncLoading && next is AsyncData)` — un test qui matche *aussi* la toute première résolution du `build()` du contrôleur (`Future<void> build() async {}`), qui transite forcément par ce même `AsyncLoading → AsyncData` au montage de l'écran, sans qu'aucune action n'ait eu lieu.
+
+Corrigé en remplaçant ce pattern par celui déjà utilisé ailleurs (`CreateTravelBookController.create` → id nullable retourné directement à l'appelant) : `ForgotPasswordController.sendResetLink` et `EditProfileController.saveDisplayName`/`uploadAvatar` retournent maintenant `Future<bool>` (succès ou non), et les écrans agissent sur cette valeur après l'avoir attendue — `ref.listen` ne sert plus qu'à afficher les erreurs, jamais à déduire un succès de la forme de la transition d'état. Voir §3 pour la règle générale à appliquer aux futurs contrôleurs de ce type.
+
+## 19. Prochaine étape : Phase 15 — Performance
+
+Pas de décision d'architecture actée à ce stade au-delà de ce qui est déjà dans le brief. Pistes probables vu l'état du code : re-vérifier les listes lazy (Home/Explore/Mes carnets) sous des volumes plus réalistes, le nombre de lectures Firestore par écran (la jointure auteur `authorProfileProvider` fait un `get()` par carte affichée, sans dénormalisation — signalé comme point à revoir dès la Phase 9), et le coût de `localFirstStream`/`SyncEngine` sur de grosses files d'attente. Aucune mesure réelle possible dans cet environnement (pas de build Android/iOS, voir §4) — l'essentiel du travail sera probablement une revue de code plutôt que du profiling.
 
 ---
 
