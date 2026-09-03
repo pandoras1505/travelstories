@@ -6,8 +6,10 @@ import 'package:travelstories/features/authentication/domain/entities/auth_user.
 import 'package:travelstories/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:travelstories/features/authentication/presentation/screens/login_screen.dart';
 import 'package:travelstories/features/authentication/presentation/screens/splash_screen.dart';
+import 'package:travelstories/features/profile/presentation/providers/profile_providers.dart';
 
 import 'fakes/fake_auth_repository.dart';
+import 'fakes/fake_profile_repository.dart';
 
 void main() {
   testWidgets('signed out: boots on the splash screen then redirects to login', (tester) async {
@@ -35,6 +37,7 @@ void main() {
           authRepositoryProvider.overrideWithValue(
             FakeAuthRepository(initialUser: const AuthUser(uid: 'u1', email: 'traveler@example.com')),
           ),
+          profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
         ],
         child: const TravelStoriesApp(),
       ),

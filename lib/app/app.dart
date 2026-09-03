@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/localization/generated/app_localizations.dart';
 import '../core/theme/app_theme.dart';
+import '../features/profile/presentation/providers/profile_bootstrap_provider.dart';
 import 'router/app_router.dart';
 
 class TravelStoriesApp extends ConsumerWidget {
@@ -11,6 +12,7 @@ class TravelStoriesApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    ref.watch(profileBootstrapProvider);
 
     return MaterialApp.router(
       title: 'TravelStories',

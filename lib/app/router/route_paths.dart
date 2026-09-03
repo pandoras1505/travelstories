@@ -15,4 +15,5 @@ class RoutePaths {
   static const String create = '/app/create';
   static const String travelBooks = '/app/travel-books';
   static const String profile = '/app/profile';
+  static const String editProfile = '/app/profile/edit';
 }

@@ -47,5 +47,18 @@
   "authErrorTooManyRequests": "Too many attempts. Try again later.",
   "authErrorNetwork": "Network connection problem.",
   "authErrorGoogleSignInFailed": "Google sign-in failed.",
-  "authErrorUnknown": "Something went wrong. Please try again."
+  "authErrorUnknown": "Something went wrong. Please try again.",
+
+  "profileEditButton": "Edit profile",
+  "profileEditTitle": "Edit profile",
+  "profileSaveButton": "Save",
+  "profileChangePhoto": "Change photo",
+  "profileChoosePhoto": "Choose from gallery",
+  "profileTakePhoto": "Take a photo",
+  "profileSaved": "Profile updated.",
+  "commonCancel": "Cancel",
+
+  "storageErrorUnavailable": "Storage isn't available on this project yet. Try again later.",
+  "storageErrorUnauthorized": "You don't have permission to do this.",
+  "storageErrorUnknown": "Upload failed. Please try again."
 }

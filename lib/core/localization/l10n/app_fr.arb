@@ -49,5 +49,18 @@
   "authErrorTooManyRequests": "Trop de tentatives. Réessaie plus tard.",
   "authErrorNetwork": "Problème de connexion réseau.",
   "authErrorGoogleSignInFailed": "La connexion avec Google a échoué.",
-  "authErrorUnknown": "Une erreur est survenue. Réessaie."
+  "authErrorUnknown": "Une erreur est survenue. Réessaie.",
+
+  "profileEditButton": "Modifier le profil",
+  "profileEditTitle": "Modifier le profil",
+  "profileSaveButton": "Enregistrer",
+  "profileChangePhoto": "Changer la photo",
+  "profileChoosePhoto": "Choisir dans la galerie",
+  "profileTakePhoto": "Prendre une photo",
+  "profileSaved": "Profil mis à jour.",
+  "commonCancel": "Annuler",
+
+  "storageErrorUnavailable": "Le stockage n'est pas encore disponible sur ce projet. Réessaie plus tard.",
+  "storageErrorUnauthorized": "Tu n'as pas la permission d'effectuer cette action.",
+  "storageErrorUnknown": "Le téléversement a échoué. Réessaie."
 }

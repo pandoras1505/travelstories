@@ -10,6 +10,7 @@ import '../../features/authentication/presentation/screens/register_screen.dart'
 import '../../features/authentication/presentation/screens/splash_screen.dart';
 import '../../features/exploration/presentation/screens/explore_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/travel_books/presentation/screens/create_entry_screen.dart';
 import '../../features/travel_books/presentation/screens/travel_books_screen.dart';
@@ -77,7 +78,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: RoutePaths.profile, builder: (context, state) => const ProfileScreen()),
+              GoRoute(
+                path: RoutePaths.profile,
+                builder: (context, state) => const ProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => const EditProfileScreen(),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
