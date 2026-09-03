@@ -1,0 +1,30 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "travelstories-app",
+          "appId": "1:1043925918030:android:b2ad262758574271267e1f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "travelstories-app",
+          "configurations": {
+            "android": "1:1043925918030:android:b2ad262758574271267e1f",
+            "ios": "1:1043925918030:ios:ba7032740d0643e8267e1f",
+            "web": "1:1043925918030:web:6fc492bdd8eebbee267e1f"
+          }
+        }
+      }
+    }
+  }
+}

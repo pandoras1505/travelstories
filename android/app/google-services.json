@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1043925918030",
+    "project_id": "travelstories-app",
+    "storage_bucket": "travelstories-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1043925918030:android:b2ad262758574271267e1f",
+        "android_client_info": {
+          "package_name": "com.travelstories.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqkjU-vnoZxnUg3Cl6dO-t18RgFzFXi4U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

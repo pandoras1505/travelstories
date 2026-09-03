@@ -17,5 +17,37 @@
   "commonError": "Une erreur est survenue",
   "commonEmpty": "Rien à afficher pour le moment",
   "commonOffline": "Vous êtes hors ligne",
-  "commonBackOnline": "Connexion rétablie. Synchronisation..."
+  "commonBackOnline": "Connexion rétablie. Synchronisation...",
+  "commonOr": "ou",
+
+  "authEmailLabel": "Adresse e-mail",
+  "authPasswordLabel": "Mot de passe",
+  "authConfirmPasswordLabel": "Confirmer le mot de passe",
+  "authDisplayNameLabel": "Nom affiché",
+  "authLoginButton": "Se connecter",
+  "authRegisterButton": "Créer mon compte",
+  "authSignInWithGoogle": "Continuer avec Google",
+  "authSendResetLink": "Envoyer le lien",
+  "authResetEmailSent": "E-mail envoyé. Vérifie ta boîte de réception.",
+  "authNoAccount": "Pas encore de compte ?",
+  "authHaveAccount": "Déjà un compte ?",
+  "authBackToLogin": "Retour à la connexion",
+  "authSignOut": "Se déconnecter",
+
+  "validationEmailRequired": "L'adresse e-mail est requise",
+  "validationEmailInvalid": "Adresse e-mail invalide",
+  "validationPasswordRequired": "Le mot de passe est requis",
+  "validationPasswordTooShort": "8 caractères minimum",
+  "validationDisplayNameRequired": "Le nom affiché est requis",
+  "validationPasswordsDoNotMatch": "Les mots de passe ne correspondent pas",
+
+  "authErrorInvalidEmail": "Adresse e-mail invalide.",
+  "authErrorInvalidCredential": "E-mail ou mot de passe incorrect.",
+  "authErrorUserDisabled": "Ce compte a été désactivé.",
+  "authErrorEmailInUse": "Un compte existe déjà avec cette adresse e-mail.",
+  "authErrorWeakPassword": "Mot de passe trop faible (8 caractères minimum).",
+  "authErrorTooManyRequests": "Trop de tentatives. Réessaie plus tard.",
+  "authErrorNetwork": "Problème de connexion réseau.",
+  "authErrorGoogleSignInFailed": "La connexion avec Google a échoué.",
+  "authErrorUnknown": "Une erreur est survenue. Réessaie."
 }

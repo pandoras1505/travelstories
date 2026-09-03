@@ -15,5 +15,37 @@
   "commonError": "Something went wrong",
   "commonEmpty": "Nothing to show yet",
   "commonOffline": "You are offline",
-  "commonBackOnline": "Back online. Syncing..."
+  "commonBackOnline": "Back online. Syncing...",
+  "commonOr": "or",
+
+  "authEmailLabel": "Email address",
+  "authPasswordLabel": "Password",
+  "authConfirmPasswordLabel": "Confirm password",
+  "authDisplayNameLabel": "Display name",
+  "authLoginButton": "Log in",
+  "authRegisterButton": "Create my account",
+  "authSignInWithGoogle": "Continue with Google",
+  "authSendResetLink": "Send reset link",
+  "authResetEmailSent": "Email sent. Check your inbox.",
+  "authNoAccount": "Don't have an account?",
+  "authHaveAccount": "Already have an account?",
+  "authBackToLogin": "Back to login",
+  "authSignOut": "Log out",
+
+  "validationEmailRequired": "Email address is required",
+  "validationEmailInvalid": "Invalid email address",
+  "validationPasswordRequired": "Password is required",
+  "validationPasswordTooShort": "8 characters minimum",
+  "validationDisplayNameRequired": "Display name is required",
+  "validationPasswordsDoNotMatch": "Passwords do not match",
+
+  "authErrorInvalidEmail": "Invalid email address.",
+  "authErrorInvalidCredential": "Incorrect email or password.",
+  "authErrorUserDisabled": "This account has been disabled.",
+  "authErrorEmailInUse": "An account already exists with this email.",
+  "authErrorWeakPassword": "Password too weak (8 characters minimum).",
+  "authErrorTooManyRequests": "Too many attempts. Try again later.",
+  "authErrorNetwork": "Network connection problem.",
+  "authErrorGoogleSignInFailed": "Google sign-in failed.",
+  "authErrorUnknown": "Something went wrong. Please try again."
 }

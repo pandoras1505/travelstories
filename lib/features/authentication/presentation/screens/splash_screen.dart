@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../providers/auth_providers.dart';
 
-/// First screen shown on launch. Once authentication state exists (Phase 2)
-/// this will route to [RoutePaths.home] or [RoutePaths.login] depending on
-/// the current session instead of always going to login.
-class SplashScreen extends StatefulWidget {
+/// First screen shown on launch. Waits briefly for the brand moment, then
+/// routes to [RoutePaths.home] or [RoutePaths.login] depending on whether a
+/// session is already active.
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
     Future.delayed(const Duration(milliseconds: 900), () {
-      if (mounted) context.go(RoutePaths.login);
+      if (!mounted) return;
+      final isSignedIn = ref.read(authRepositoryProvider).currentUser != null;
+      context.go(isSignedIn ? RoutePaths.home : RoutePaths.login);
     });
   }
 
@@ -47,17 +51,13 @@ class _SplashScreenState extends State<SplashScreen> {
               children: [
                 Text(
                   l10n.appName,
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    color: scheme.onPrimary,
-                  ),
+                  style: theme.textTheme.displaySmall?.copyWith(color: scheme.onPrimary),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   l10n.appTagline,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: scheme.onPrimary.withValues(alpha: 0.9),
-                  ),
+                  style: theme.textTheme.bodyLarge?.copyWith(color: scheme.onPrimary.withValues(alpha: 0.9)),
                 ),
               ],
             ),

@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // --- users/{uid} ---------------------------------------------------
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid)
+        && request.resource.data.id == uid;
+      allow update: if isOwner(uid)
+        && request.resource.data.id == resource.data.id;
+      allow delete: if false;
+    }
+
+    // --- travelBooks/{travelBookId} -------------------------------------
+    match /travelBooks/{travelBookId} {
+      function isBookOwner() {
+        return isSignedIn() && resource.data.ownerId == request.auth.uid;
+      }
+
+      allow read: if resource.data.isPublic == true || isBookOwner();
+
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.isPublic is bool;
+
+      allow update: if isBookOwner()
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120;
+
+      allow delete: if isBookOwner();
+
+      // --- travelBooks/{travelBookId}/experiences/{experienceId} -------
+      match /experiences/{experienceId} {
+        function parentBook() {
+          return get(/databases/$(database)/documents/travelBooks/$(travelBookId)).data;
+        }
+
+        function isParentBookOwner() {
+          return isSignedIn() && parentBook().ownerId == request.auth.uid;
+        }
+
+        allow read: if parentBook().isPublic == true || isParentBookOwner();
+
+        allow create: if isParentBookOwner()
+          && request.resource.data.travelBookId == travelBookId
+          && request.resource.data.ownerId == request.auth.uid
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 120
+          && request.resource.data.latitude is number
+          && request.resource.data.longitude is number
+          && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90
+          && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180;
+
+        allow update: if isParentBookOwner()
+          && request.resource.data.travelBookId == resource.data.travelBookId
+          && request.resource.data.ownerId == resource.data.ownerId;
+
+        allow delete: if isParentBookOwner();
+      }
+    }
+  }
+}

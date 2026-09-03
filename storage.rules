@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < 15 * 1024 * 1024;
+    }
+
+    function isValidVideo() {
+      return request.resource.contentType.matches('video/.*')
+        && request.resource.size < 200 * 1024 * 1024;
+    }
+
+    // users/{uid}/profile/* — only the owner may write; profile photos are
+    // publicly readable (shown on public travel books/profiles).
+    match /users/{uid}/profile/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(uid) && isValidImage();
+      allow delete: if isOwner(uid);
+    }
+
+    // travelBooks/{travelBookId}/cover/* — the app enforces ownership of
+    // the parent travel book before issuing an upload; Storage rules alone
+    // cannot look up Firestore ownership cheaply, so writes require auth
+    // and a valid image, and reads are public (public/private gating for
+    // book content happens at the Firestore layer, not Storage).
+    match /travelBooks/{travelBookId}/cover/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidImage();
+      allow delete: if isSignedIn();
+    }
+
+    // travelBooks/{travelBookId}/experiences/{experienceId}/* — images or
+    // video for one experience.
+    match /travelBooks/{travelBookId}/experiences/{experienceId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && (isValidImage() || isValidVideo());
+      allow delete: if isSignedIn();
+    }
+  }
+}
