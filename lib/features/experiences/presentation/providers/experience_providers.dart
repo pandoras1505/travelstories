@@ -1,21 +1,36 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../media/media_processor.dart';
+import '../../../media/media_service.dart';
 import '../../data/datasources/experience_firestore_data_source.dart';
+import '../../data/datasources/experience_media_storage_data_source.dart';
 import '../../data/repositories/experience_repository_impl.dart';
 import '../../domain/entities/experience.dart';
 import '../../domain/repositories/experience_repository.dart';
 import '../../domain/usecases/create_experience_usecase.dart';
 import '../../domain/usecases/delete_experience_usecase.dart';
+import '../../domain/usecases/remove_experience_media_usecase.dart';
 import '../../domain/usecases/update_experience_usecase.dart';
+import '../../domain/usecases/upload_experience_media_usecase.dart';
 
 final experienceRepositoryProvider = Provider<ExperienceRepository>((ref) {
   return ExperienceRepositoryImpl(
     dataSource: ExperienceFirestoreDataSource(
       firestore: FirebaseFirestore.instance,
     ),
+    mediaStorageDataSource: ExperienceMediaStorageDataSource(
+      storage: FirebaseStorage.instance,
+    ),
   );
 });
+
+final mediaServiceProvider = Provider<MediaService>((ref) => MediaService());
+
+final mediaProcessorProvider = Provider<MediaProcessor>(
+  (ref) => MediaProcessor(),
+);
 
 final experiencesForBookProvider =
     StreamProvider.family<List<Experience>, String>((ref, travelBookId) {
@@ -52,3 +67,17 @@ final deleteExperienceUseCaseProvider = Provider<DeleteExperienceUseCase>((
 ) {
   return DeleteExperienceUseCase(ref.watch(experienceRepositoryProvider));
 });
+
+final uploadExperienceMediaUseCaseProvider =
+    Provider<UploadExperienceMediaUseCase>((ref) {
+      return UploadExperienceMediaUseCase(
+        ref.watch(experienceRepositoryProvider),
+      );
+    });
+
+final removeExperienceMediaUseCaseProvider =
+    Provider<RemoveExperienceMediaUseCase>((ref) {
+      return RemoveExperienceMediaUseCase(
+        ref.watch(experienceRepositoryProvider),
+      );
+    });

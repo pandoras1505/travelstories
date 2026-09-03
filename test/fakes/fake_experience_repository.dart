@@ -111,4 +111,45 @@ class FakeExperienceRepository implements ExperienceRepository {
     _byBookController(travelBookId).add(null);
     _byIdController(id).add(null);
   }
+
+  @override
+  Future<void> uploadMedia({
+    required String travelBookId,
+    required String id,
+    required ExperienceMediaType mediaType,
+    required List<int> bytes,
+    required String extension,
+    List<int>? thumbnailBytes,
+  }) async {
+    final existing = _experiences[id];
+    if (existing == null) return;
+    final updated = existing.copyWith(
+      mediaType: mediaType,
+      mediaUrl: 'https://example.com/fake-media.$extension',
+      thumbnailUrl: thumbnailBytes != null
+          ? 'https://example.com/fake-thumbnail.jpg'
+          : null,
+      updatedAt: DateTime.now(),
+    );
+    _experiences[id] = updated;
+    _byBookController(travelBookId).add(null);
+    _byIdController(id).add(updated);
+  }
+
+  @override
+  Future<void> removeMedia({
+    required String travelBookId,
+    required String id,
+  }) async {
+    final existing = _experiences[id];
+    if (existing == null) return;
+    final updated = existing.copyWith(
+      mediaType: ExperienceMediaType.text,
+      mediaUrl: null,
+      thumbnailUrl: null,
+    );
+    _experiences[id] = updated;
+    _byBookController(travelBookId).add(null);
+    _byIdController(id).add(updated);
+  }
 }

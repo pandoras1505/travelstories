@@ -96,5 +96,18 @@
   "experienceEditTitle": "Edit experience",
   "experienceAdd": "Add an experience",
   "experienceDeleteConfirmTitle": "Delete this experience?",
-  "experienceDeleteConfirmMessage": "This action cannot be undone."
+  "experienceDeleteConfirmMessage": "This action cannot be undone.",
+
+  "experienceAddMedia": "Add a photo or video",
+  "experienceChangeMedia": "Change media",
+  "experienceRemoveMedia": "Remove media",
+  "experiencePickPhoto": "Choose a photo",
+  "experienceTakePhoto": "Take a photo",
+  "experiencePickVideo": "Choose a video",
+  "experienceRecordVideo": "Record a video",
+
+  "mediaErrorImageTooLarge": "This image is over 15 MB.",
+  "mediaErrorVideoTooLarge": "This video is over 200 MB.",
+  "mediaErrorProcessingFailed": "Processing this media failed. Please try again.",
+  "mediaErrorUnknown": "Something went wrong with this media."
 }

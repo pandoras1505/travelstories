@@ -82,6 +82,9 @@ void main() {
         find.byType(TextFormField).first,
         'Cascade de Womé (rénovée)',
       );
+      // The media section pushes the save button below the fold on the
+      // test surface — scroll it into view before tapping.
+      await tester.ensureVisible(find.byType(FilledButton));
       await tester.tap(find.byType(FilledButton));
       await tester.pumpAndSettle();
 

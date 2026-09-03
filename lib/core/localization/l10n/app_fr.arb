@@ -98,5 +98,18 @@
   "experienceEditTitle": "Modifier l'expérience",
   "experienceAdd": "Ajouter une expérience",
   "experienceDeleteConfirmTitle": "Supprimer cette expérience ?",
-  "experienceDeleteConfirmMessage": "Cette action est irréversible."
+  "experienceDeleteConfirmMessage": "Cette action est irréversible.",
+
+  "experienceAddMedia": "Ajouter une photo ou vidéo",
+  "experienceChangeMedia": "Changer le média",
+  "experienceRemoveMedia": "Supprimer le média",
+  "experiencePickPhoto": "Choisir une photo",
+  "experienceTakePhoto": "Prendre une photo",
+  "experiencePickVideo": "Choisir une vidéo",
+  "experienceRecordVideo": "Filmer une vidéo",
+
+  "mediaErrorImageTooLarge": "Cette image dépasse 15 Mo.",
+  "mediaErrorVideoTooLarge": "Cette vidéo dépasse 200 Mo.",
+  "mediaErrorProcessingFailed": "Le traitement du média a échoué. Réessaie.",
+  "mediaErrorUnknown": "Une erreur est survenue avec ce média."
 }

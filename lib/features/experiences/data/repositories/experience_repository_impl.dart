@@ -4,12 +4,17 @@ import '../../../../core/errors/app_exception.dart';
 import '../../domain/entities/experience.dart';
 import '../../domain/repositories/experience_repository.dart';
 import '../datasources/experience_firestore_data_source.dart';
+import '../datasources/experience_media_storage_data_source.dart';
 
 class ExperienceRepositoryImpl implements ExperienceRepository {
-  ExperienceRepositoryImpl({required ExperienceFirestoreDataSource dataSource})
-    : _dataSource = dataSource;
+  ExperienceRepositoryImpl({
+    required ExperienceFirestoreDataSource dataSource,
+    required ExperienceMediaStorageDataSource mediaStorageDataSource,
+  }) : _dataSource = dataSource,
+       _mediaStorageDataSource = mediaStorageDataSource;
 
   final ExperienceFirestoreDataSource _dataSource;
+  final ExperienceMediaStorageDataSource _mediaStorageDataSource;
 
   @override
   Stream<List<Experience>> watchExperiences(String travelBookId) async* {
@@ -100,6 +105,81 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
   }) async {
     try {
       await _dataSource.deleteAndDecrementCount(travelBookId, id);
+    } on fs.FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    }
+  }
+
+  @override
+  Future<void> uploadMedia({
+    required String travelBookId,
+    required String id,
+    required ExperienceMediaType mediaType,
+    required List<int> bytes,
+    required String extension,
+    List<int>? thumbnailBytes,
+  }) async {
+    final String mediaUrl;
+    String? thumbnailUrl;
+    try {
+      mediaUrl = await _mediaStorageDataSource.uploadMedia(
+        travelBookId: travelBookId,
+        experienceId: id,
+        bytes: bytes,
+        extension: extension,
+      );
+      if (thumbnailBytes != null) {
+        thumbnailUrl = await _mediaStorageDataSource.uploadThumbnail(
+          travelBookId: travelBookId,
+          experienceId: id,
+          bytes: thumbnailBytes,
+        );
+      }
+    } on fs.FirebaseException catch (e) {
+      throw StorageException(
+        'Storage error: ${e.code}',
+        code: e.code,
+        cause: e,
+      );
+    }
+
+    try {
+      await _dataSource.update(travelBookId, id, {
+        'mediaType': mediaType.name,
+        'mediaUrl': mediaUrl,
+        'thumbnailUrl': thumbnailUrl,
+        'updatedAt': fs.FieldValue.serverTimestamp(),
+      });
+    } on fs.FirebaseException catch (e) {
+      throw _mapFirestoreException(e);
+    }
+  }
+
+  @override
+  Future<void> removeMedia({
+    required String travelBookId,
+    required String id,
+  }) async {
+    try {
+      await _mediaStorageDataSource.deleteAll(
+        travelBookId: travelBookId,
+        experienceId: id,
+      );
+    } on fs.FirebaseException catch (e) {
+      throw StorageException(
+        'Storage error: ${e.code}',
+        code: e.code,
+        cause: e,
+      );
+    }
+
+    try {
+      await _dataSource.update(travelBookId, id, {
+        'mediaType': ExperienceMediaType.text.name,
+        'mediaUrl': null,
+        'thumbnailUrl': null,
+        'updatedAt': fs.FieldValue.serverTimestamp(),
+      });
     } on fs.FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     }

@@ -38,4 +38,20 @@ abstract class ExperienceRepository {
     required String travelBookId,
     required String id,
   });
+
+  /// Uploads the (already processed — compressed image, or video +
+  /// generated thumbnail) media, then updates the experience's
+  /// `mediaType`/`mediaUrl`/`thumbnailUrl`.
+  Future<void> uploadMedia({
+    required String travelBookId,
+    required String id,
+    required ExperienceMediaType mediaType,
+    required List<int> bytes,
+    required String extension,
+    List<int>? thumbnailBytes,
+  });
+
+  /// Deletes the experience's media from Storage and resets
+  /// `mediaType`/`mediaUrl`/`thumbnailUrl` back to text/null.
+  Future<void> removeMedia({required String travelBookId, required String id});
 }

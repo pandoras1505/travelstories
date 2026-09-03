@@ -65,6 +65,8 @@
 	<string>TravelStories a besoin d'accéder à tes photos pour choisir ta photo de profil et illustrer tes expériences de voyage.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>TravelStories a besoin de l'appareil photo pour prendre une photo de profil ou immortaliser tes expériences de voyage.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TravelStories a besoin du micro pour enregistrer le son de tes vidéos d'expériences de voyage.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

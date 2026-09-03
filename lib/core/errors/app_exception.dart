@@ -45,7 +45,9 @@ class LocationException extends AppException {
 }
 
 class MediaException extends AppException {
-  const MediaException(super.message, {super.cause});
+  const MediaException(super.message, {super.cause, this.code});
+
+  final String? code;
 }
 
 class SyncException extends AppException {

@@ -198,6 +198,11 @@ class _ExperienceCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
+    final hasMedia = experience.mediaType != ExperienceMediaType.text;
+    final previewUrl = experience.mediaType == ExperienceMediaType.image
+        ? experience.mediaUrl
+        : experience.thumbnailUrl;
+
     return Material(
       color: scheme.surfaceContainerLow,
       borderRadius: AppRadius.mdRadius,
@@ -206,44 +211,73 @@ class _ExperienceCard extends StatelessWidget {
         onTap: () => context.push(
           '${RoutePaths.travelBooks}/$travelBookId/experiences/${experience.id}/edit',
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(experience.title, style: theme.textTheme.titleMedium),
-              if (experience.locationName != null) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasMedia)
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Icon(
-                      Icons.place_outlined,
-                      size: 16,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      experience.locationName!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                    previewUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: previewUrl,
+                            fit: BoxFit.cover,
+                          )
+                        : ColoredBox(color: scheme.surfaceContainerHigh),
+                    if (experience.mediaType == ExperienceMediaType.video)
+                      Center(
+                        child: Icon(
+                          Icons.play_circle_fill,
+                          size: 40,
+                          color: scheme.onSurface.withValues(alpha: 0.85),
+                        ),
                       ),
-                    ),
                   ],
                 ),
-              ],
-              if (experience.description.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  experience.description,
-                  style: theme.textTheme.bodyMedium,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ],
-          ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(experience.title, style: theme.textTheme.titleMedium),
+                  if (experience.locationName != null) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.place_outlined,
+                          size: 16,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          experience.locationName!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (experience.description.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      experience.description,
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
