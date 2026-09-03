@@ -3,8 +3,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/database_providers.dart';
+import '../../../../core/sync/sync_providers.dart';
 import '../../../media/media_processor.dart';
 import '../../../media/media_service.dart';
+import '../../../travel_books/data/datasources/travel_book_local_data_source.dart';
 import '../../data/datasources/experience_firestore_data_source.dart';
 import '../../data/datasources/experience_local_data_source.dart';
 import '../../data/datasources/experience_media_storage_data_source.dart';
@@ -29,6 +31,8 @@ final experienceRepositoryProvider = Provider<ExperienceRepository>((ref) {
       storage: FirebaseStorage.instance,
     ),
     localDataSource: ExperienceLocalDataSource(database: database),
+    travelBookLocalDataSource: TravelBookLocalDataSource(database: database),
+    syncEngine: ref.watch(syncEngineProvider),
   );
 });
 

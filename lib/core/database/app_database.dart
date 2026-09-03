@@ -12,6 +12,7 @@ abstract final class AppDatabaseSchema {
 
   static const String travelBooks = 'travel_books';
   static const String experiences = 'experiences';
+  static const String pendingMutations = 'pending_mutations';
 }
 
 /// Opens the app's local database, creating the schema on first run.
@@ -68,6 +69,19 @@ Future<Database> openAppDatabase({String? path}) async {
         'CREATE INDEX idx_experiences_travel_book_id '
         'ON ${AppDatabaseSchema.experiences} (travel_book_id)',
       );
+
+      // FIFO queue of writes not yet confirmed by Firestore (Phase 12: the
+      // sync engine). `id` autoincrements, so `ORDER BY id ASC` is enough
+      // to replay mutations in the order they were made — no separate
+      // timestamp/sequence column needed.
+      await db.execute('''
+        CREATE TABLE ${AppDatabaseSchema.pendingMutations} (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL,
+          payload TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        )
+      ''');
     },
   );
 }

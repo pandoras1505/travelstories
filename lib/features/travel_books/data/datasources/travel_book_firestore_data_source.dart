@@ -67,9 +67,14 @@ class TravelBookFirestoreDataSource {
   Future<DocumentSnapshot<Map<String, dynamic>>> get(String id) =>
       _travelBooks.doc(id).get();
 
-  Future<DocumentReference<Map<String, dynamic>>> add(
-    Map<String, dynamic> data,
-  ) => _travelBooks.add(data);
+  /// A client-generated id, synchronously, no network round trip — lets
+  /// callers know a new document's id upfront (needed to write it to the
+  /// local cache immediately and queue the create for later if offline;
+  /// see `SyncEngine`).
+  String newId() => _travelBooks.doc().id;
+
+  Future<void> set(String id, Map<String, dynamic> data) =>
+      _travelBooks.doc(id).set(data);
 
   Future<void> update(String id, Map<String, dynamic> data) =>
       _travelBooks.doc(id).update(data);

@@ -28,21 +28,24 @@ class ExperienceFirestoreDataSource {
     return _experiences(travelBookId).doc(id).snapshots();
   }
 
-  /// Creates the experience doc and increments the parent's
-  /// `experienceCount` in one atomic batch.
-  Future<String> addAndIncrementCount(
+  /// A client-generated id, synchronously, no network round trip — see
+  /// `TravelBookFirestoreDataSource.newId`.
+  String newId(String travelBookId) => _experiences(travelBookId).doc().id;
+
+  /// Creates the experience doc at [id] (from [newId]) and increments the
+  /// parent's `experienceCount` in one atomic batch.
+  Future<void> createAndIncrementCount(
     String travelBookId,
+    String id,
     Map<String, dynamic> data,
-  ) async {
-    final ref = _experiences(travelBookId).doc();
+  ) {
     final batch = _firestore.batch()
-      ..set(ref, data)
+      ..set(_experiences(travelBookId).doc(id), data)
       ..update(_travelBookDoc(travelBookId), {
         'experienceCount': FieldValue.increment(1),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-    await batch.commit();
-    return ref.id;
+    return batch.commit();
   }
 
   Future<void> update(

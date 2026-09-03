@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/offline/local_first_stream.dart';
+import '../../../../core/sync/pending_mutation.dart';
+import '../../../../core/sync/sync_engine.dart';
+import '../../../travel_books/data/datasources/travel_book_local_data_source.dart';
 import '../../domain/entities/experience.dart';
 import '../../domain/repositories/experience_repository.dart';
 import '../datasources/experience_firestore_data_source.dart';
@@ -13,13 +16,24 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
     required ExperienceFirestoreDataSource dataSource,
     required ExperienceMediaStorageDataSource mediaStorageDataSource,
     required ExperienceLocalDataSource localDataSource,
+    required TravelBookLocalDataSource travelBookLocalDataSource,
+    required SyncEngine syncEngine,
   }) : _dataSource = dataSource,
        _mediaStorageDataSource = mediaStorageDataSource,
-       _localDataSource = localDataSource;
+       _localDataSource = localDataSource,
+       _travelBookLocalDataSource = travelBookLocalDataSource,
+       _syncEngine = syncEngine {
+    _syncEngine
+      ..registerApplier('createExperience', _applyCreate)
+      ..registerApplier('updateExperience', _applyUpdate)
+      ..registerApplier('deleteExperience', _applyDelete);
+  }
 
   final ExperienceFirestoreDataSource _dataSource;
   final ExperienceMediaStorageDataSource _mediaStorageDataSource;
   final ExperienceLocalDataSource _localDataSource;
+  final TravelBookLocalDataSource _travelBookLocalDataSource;
+  final SyncEngine _syncEngine;
 
   /// Local-first: see `TravelBookRepositoryImpl.watchMyTravelBooks` for the
   /// same pattern — cache emitted immediately, then live Firestore updates
@@ -92,6 +106,10 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
     }
   }
 
+  /// Writes below apply to the local cache immediately and queue the real
+  /// Firestore write on [_syncEngine] instead of awaiting it — see
+  /// `TravelBookRepositoryImpl`'s equivalent methods for the same pattern
+  /// (including why [createdAt] is a client timestamp).
   @override
   Future<String> createExperience({
     required String travelBookId,
@@ -102,21 +120,62 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
     double? latitude,
     double? longitude,
   }) async {
+    final id = _dataSource.newId(travelBookId);
+    final now = DateTime.now();
+    final experience = Experience(
+      id: id,
+      travelBookId: travelBookId,
+      ownerId: ownerId,
+      title: title,
+      description: description,
+      latitude: latitude,
+      longitude: longitude,
+      locationName: locationName,
+      mediaType: ExperienceMediaType.text,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await _localDataSource.upsert(experience);
+    await _bumpLocalExperienceCount(travelBookId, delta: 1, updatedAt: now);
+    await _syncEngine.enqueue('createExperience', {
+      'id': id,
+      'travelBookId': travelBookId,
+      'ownerId': ownerId,
+      'title': title,
+      'description': description,
+      'latitude': latitude,
+      'longitude': longitude,
+      'locationName': locationName,
+      'createdAt': now.toIso8601String(),
+    });
+
+    return id;
+  }
+
+  Future<void> _applyCreate(PendingMutation mutation) async {
+    final data = mutation.payload;
     try {
-      return await _dataSource.addAndIncrementCount(travelBookId, {
-        'travelBookId': travelBookId,
-        'ownerId': ownerId,
-        'title': title,
-        'description': description,
-        'latitude': latitude,
-        'longitude': longitude,
-        'locationName': locationName,
-        'mediaType': ExperienceMediaType.text.name,
-        'mediaUrl': null,
-        'thumbnailUrl': null,
-        'createdAt': fs.FieldValue.serverTimestamp(),
-        'updatedAt': fs.FieldValue.serverTimestamp(),
-      });
+      await _dataSource.createAndIncrementCount(
+        data['travelBookId'] as String,
+        data['id'] as String,
+        {
+          'travelBookId': data['travelBookId'],
+          'ownerId': data['ownerId'],
+          'title': data['title'],
+          'description': data['description'],
+          'latitude': data['latitude'],
+          'longitude': data['longitude'],
+          'locationName': data['locationName'],
+          'mediaType': ExperienceMediaType.text.name,
+          'mediaUrl': null,
+          'thumbnailUrl': null,
+          'createdAt': fs.Timestamp.fromDate(
+            DateTime.parse(data['createdAt'] as String),
+          ),
+          'updatedAt': fs.FieldValue.serverTimestamp(),
+        },
+      );
     } on fs.FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     }
@@ -132,15 +191,42 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
     double? latitude,
     double? longitude,
   }) async {
+    final existing = await _localDataSource.getById(id);
+    if (existing != null) {
+      await _localDataSource.upsert(
+        existing.copyWith(
+          title: title,
+          description: description,
+          locationName: locationName,
+          latitude: latitude,
+          longitude: longitude,
+          updatedAt: DateTime.now(),
+        ),
+      );
+    }
+    await _syncEngine.enqueue('updateExperience', {
+      'travelBookId': travelBookId,
+      'id': id,
+      'title': title,
+      'description': description,
+      'locationName': locationName,
+      'latitude': latitude,
+      'longitude': longitude,
+    });
+  }
+
+  Future<void> _applyUpdate(PendingMutation mutation) async {
+    final data = mutation.payload;
     try {
-      await _dataSource.update(travelBookId, id, {
-        'title': title,
-        'description': description,
-        'latitude': latitude,
-        'longitude': longitude,
-        'locationName': locationName,
-        'updatedAt': fs.FieldValue.serverTimestamp(),
-      });
+      await _dataSource
+          .update(data['travelBookId'] as String, data['id'] as String, {
+            'title': data['title'],
+            'description': data['description'],
+            'latitude': data['latitude'],
+            'longitude': data['longitude'],
+            'locationName': data['locationName'],
+            'updatedAt': fs.FieldValue.serverTimestamp(),
+          });
     } on fs.FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     }
@@ -151,11 +237,43 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
     required String travelBookId,
     required String id,
   }) async {
+    await _localDataSource.delete(id);
+    await _bumpLocalExperienceCount(
+      travelBookId,
+      delta: -1,
+      updatedAt: DateTime.now(),
+    );
+    await _syncEngine.enqueue('deleteExperience', {
+      'travelBookId': travelBookId,
+      'id': id,
+    });
+  }
+
+  Future<void> _applyDelete(PendingMutation mutation) async {
+    final data = mutation.payload;
     try {
-      await _dataSource.deleteAndDecrementCount(travelBookId, id);
+      await _dataSource.deleteAndDecrementCount(
+        data['travelBookId'] as String,
+        data['id'] as String,
+      );
     } on fs.FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     }
+  }
+
+  Future<void> _bumpLocalExperienceCount(
+    String travelBookId, {
+    required int delta,
+    required DateTime updatedAt,
+  }) async {
+    final book = await _travelBookLocalDataSource.getById(travelBookId);
+    if (book == null) return;
+    await _travelBookLocalDataSource.upsert(
+      book.copyWith(
+        experienceCount: book.experienceCount + delta,
+        updatedAt: updatedAt,
+      ),
+    );
   }
 
   @override

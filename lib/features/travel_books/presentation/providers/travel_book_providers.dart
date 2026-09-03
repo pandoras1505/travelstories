@@ -3,7 +3,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/database_providers.dart';
+import '../../../../core/sync/sync_providers.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
+import '../../../experiences/data/datasources/experience_local_data_source.dart';
 import '../../data/datasources/cover_storage_data_source.dart';
 import '../../data/datasources/travel_book_firestore_data_source.dart';
 import '../../data/datasources/travel_book_local_data_source.dart';
@@ -34,6 +36,8 @@ final travelBookRepositoryProvider = Provider<TravelBookRepository>((ref) {
       storage: FirebaseStorage.instance,
     ),
     localDataSource: TravelBookLocalDataSource(database: database),
+    experienceLocalDataSource: ExperienceLocalDataSource(database: database),
+    syncEngine: ref.watch(syncEngineProvider),
   );
 });
 
