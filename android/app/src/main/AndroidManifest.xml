@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Firebase (Auth/Firestore/Storage/Analytics/Crashlytics) needs network
+         access. The Flutter tool injects this automatically for debug builds
+         only, so it must be declared explicitly here for release builds. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="TravelStories"
         android:name="${applicationName}"
