@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-03, fin de la **Phase 9** (Home Feed + Explore).
+Dernière mise à jour : 2026-09-03, fin de la **Phase 10** (SQLite).
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan (README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT restent à créer, voir "Dette de documentation" en bas).
 
 ---
@@ -28,8 +28,8 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 7 | Geolocation + Maps | ✅ (Maps = OpenStreetMap, pas Google Maps — voir §4) |
 | 8 | Video Player | ✅ |
 | 9 | Home Feed + Explore | ✅ |
-| 10 | SQLite | ⬜ **prochaine étape** |
-| 11 | Offline-first | ⬜ |
+| 10 | SQLite | ✅ |
+| 11 | Offline-first | ⬜ **prochaine étape** |
 | 12 | Synchronization Engine | ⬜ |
 | 13 | Security Rules (audit complet) | ⬜ (règles de base déjà écrites et déployées au fil de l'eau, Phase 13 = revue/durcissement) |
 | 14 | Tests (suite complète) | ⬜ (tests déjà écrits au fil de l'eau, voir §7) |
@@ -50,6 +50,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 - **Localisation (lieu, pas i18n)** : `latitude`/`longitude` sont optionnels partout — la saisie manuelle du nom de lieu fonctionne sans position GPS ; "utiliser ma position" et "choisir sur la carte" (Phase 7) sont des compléments, pas des prérequis.
 - **i18n texte** : fr/en via `flutter gen-l10n`, fichiers sources dans `lib/core/localization/l10n/app_{fr,en}.arb`, généré dans `lib/core/localization/generated/` (gitignored, régénéré à chaque `flutter pub get`/build grâce à `generate: true` dans pubspec.yaml).
 - **Tests** : jamais de faux/mocks du SDK Firebase — chaque repository a un *fake* maison en mémoire dans `test/fakes/` implémentant l'interface du domaine (`FakeAuthRepository`, `FakeProfileRepository`, `FakeTravelBookRepository`, `FakeExperienceRepository`). Les tests widgets passent ces fakes via `ProviderScope(overrides: [...])`.
+- **SQLite** : `sqflite` (mobile réel) + `sqflite_common_ffi` en dev-dependency pour les tests (voir §4.6). Schéma en snake_case, un `*LocalDataSource` par feature (miroir des `*FirestoreDataSource`) qui mappe lignes ↔ entités lui-même — pas de repository local séparé pour l'instant, ni de couche d'abstraction supplémentaire : ces data sources ne sont pas encore branchées sur les repositories existants (ça, c'est le travail de la Phase 11 "Offline-first"). Voir §10.
 
 ## 4. Contraintes d'environnement découvertes (important, relire avant de perdre du temps à les re-découvrir)
 
@@ -61,6 +62,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 5. **`flutter` n'est pas dans le PATH** : toujours préfixer les commandes PowerShell par `$env:Path += ";C:\MASTER\flutter_windows_3.41.6-stable\flutter\bin"`.
 6. **Ne jamais `await Future.delayed(...)` dans un corps de `testWidgets`** : l'horloge du binding de test (`flutter_test`) n'avance que via `tester.pump(duration)` — un `Future.delayed` réel reste en attente indéfiniment et bloque le test (repéré Phase 9 : un test seedant deux carnets avec un `Future.delayed(5ms)` entre les deux pour forcer des `createdAt` distincts a fait planter toute la suite pendant ~10 min avant timeout). Pour des timestamps distincts dans un fake, décaler par ordre d'insertion (voir `FakeTravelBookRepository.createTravelBook`), jamais par une vraie pause.
 7. **Les listes lazy (`ListView`/`SliverList` dans un `CustomScrollView`) ne construisent que les items visibles dans le viewport de test** (par défaut 800×600) : un `find.text(...)` sur un item plus bas dans une longue liste renvoie `findsNothing` même s'il existe dans les données. Pour un test qui doit voir toute une liste courte sans scroller, agrandir la surface : `tester.view.physicalSize = const Size(800, 2400); tester.view.devicePixelRatio = 1.0;` (+ `addTearDown` pour les deux resets) plutôt que de scroller manuellement.
+8. **`sqflite` fonctionne en test, contrairement à Android/iOS (§4.1)** : `sqflite_common_ffi` (SQLite via FFI, pur Dart) tourne sans problème dans cet environnement — vérifié explicitement avant de se lancer dans la Phase 10, car ça aurait pu être bloqué par la même politique réseau que Gradle. `sqfliteFfiInit(); databaseFactory = databaseFactoryFfi;` en `setUpAll`, puis `openAppDatabase(path: inMemoryDatabasePath)` (voir `test/core/database/sqflite_test_setup.dart`). Donc, contrairement à geolocator/video_player, la couche SQLite EST testable en conditions quasi réelles ici.
 
 ## 5. État Firebase (projet `travelstories-app`)
 
@@ -84,7 +86,7 @@ flutter analyze
 flutter test
 ```
 
-Dernier statut connu (fin Phase 9) : `flutter analyze` → 0 issue, `flutter test` → **22/22** tests verts.
+Dernier statut connu (fin Phase 10) : `flutter analyze` → 0 issue, `flutter test` → **35/35** tests verts.
 
 ## 7. Tests existants
 
@@ -96,6 +98,8 @@ Dernier statut connu (fin Phase 9) : `flutter analyze` → 0 issue, `flutter tes
 - `test/features/home/home_feed_test.dart` — feed public (carnet en vedette + liste), un brouillon n'apparaît jamais, jointure auteur affichée.
 - `test/features/exploration/explore_screen_test.dart` — recherche par préfixe de titre (filtrage en direct, debounce 350ms), changement de tri sans crash.
 - `test/fakes/` — un fake par repository (Auth/Profile/TravelBook/Experience), tous en mémoire, aucun SDK Firebase touché. `FakeTravelBookRepository.fetchPublicTravelBooks` réimplémente tri/filtre/pagination en mémoire (miroir de la logique Firestore réelle) — si la logique de tri/pagination de `TravelBookRepositoryImpl` change, penser à répercuter le changement dans le fake.
+- `test/core/database/app_database_test.dart` — création du schéma (tables + index).
+- `test/features/travel_books/travel_book_local_data_source_test.dart` et `test/features/experiences/experience_local_data_source_test.dart` — round-trip upsert/getById (tous les champs, y compris nullable/géo), tri, filtre, delete, clear. Ceux-là tournent contre une vraie base SQLite en mémoire (`sqflite_common_ffi`, voir §4.8), pas un fake.
 
 Aucun test dédié pour : geolocator/carte (Phase 7) ni video_player (Phase 8) — plugins natifs sans moyen réaliste de les exercer en environnement de test headless. Idem pour toute vérification "live" Firebase (voir §4).
 
@@ -120,9 +124,22 @@ Le brief exige `README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `OFFLINE_SYNC.md`,
 - Le carnet public ouvert depuis Accueil/Explorer réutilise `TravelBookDetailScreen` tel quel (déjà capable de masquer les actions d'édition pour un non-propriétaire via `isOwner`) — aucune nouvelle route/écran de détail.
 - 2 nouveaux index composites Firestore déployés (voir §5).
 
-## 11. Prochaine étape : Phase 10 — SQLite
+## 11. Phase 10 — ce qui a été livré (SQLite)
 
-Prépare le terrain pour l'offline-first (Phase 11) : schéma SQLite miroir de Firestore pour `travelBooks`/`experiences` (et sans doute une file d'attente de mutations en attente de sync). Pas encore commencée — pas de décision d'architecture actée à ce stade au-delà de ce qui est déjà dans le brief.
+Fondation pure : schéma local + accès CRUD, **rien de branché sur les repositories/écrans existants** (c'est le périmètre de la Phase 11). Choix de scope délibéré pour ne pas mélanger "avoir une base locale qui marche" et "l'app lit/écrit dessus en offline-first" dans le même commit.
+
+- **Dépendances** : `sqflite`, `path_provider`, `path` passées de transitives à directes (`sqflite_common_ffi` en dev-dependency pour les tests). Versions alignées sur ce que `pubspec.lock` avait déjà résolu via des dépendances transitives (aucun changement de version, juste rendues explicites).
+- **`lib/core/database/app_database.dart`** : `openAppDatabase({String? path})` — ouvre (et crée au premier lancement) la base au chemin par défaut (`path_provider`, fichier `travelstories.db`) ou à un chemin custom (tests → `inMemoryDatabasePath`). `AppDatabaseSchema` centralise les noms de table + le numéro de version (`1`).
+- **Tables** (snake_case, miroir des entités Firestore) :
+  - `travel_books` : mêmes champs que l'entité `TravelBook`, dates en `INTEGER` (millis depuis epoch), `is_public` en `INTEGER` 0/1. Index sur `owner_id`.
+  - `experiences` : mêmes champs que l'entité `Experience`, `media_type` stocké en `TEXT` (nom de l'enum). Index sur `travel_book_id`.
+- **`lib/core/database/database_providers.dart`** : `appDatabaseProvider` (`FutureProvider<Database>`) — pas encore consommé par personne, prêt pour la Phase 11.
+- **Data sources locales** (une par feature, miroir des `*FirestoreDataSource`) : `TravelBookLocalDataSource` et `ExperienceLocalDataSource` — `upsert`/`upsertAll` (`ConflictAlgorithm.replace`), `getById`, `getByOwner`/`getByTravelBook` (mêmes tris que les repositories Firestore existants), `delete`, `clear`. Elles font le mapping ligne SQLite ↔ entité domaine elles-mêmes (pas de repository local intermédiaire pour l'instant) et laissent les exceptions `sqflite` se propager telles quelles (comme les data sources Firestore le font avec `FirebaseException`) — le mapping vers `DatabaseException` (déjà dans `app_exception.dart`, inutilisé jusqu'ici) se fera à la Phase 11 quand un repository lira réellement à travers ces data sources.
+- **Pas de file d'attente de mutations/sync** dans cette phase — évoqué comme possible dans le résumé précédent mais explicitement repoussé : ça relève de la Phase 11 (offline-first) ou 12 (moteur de sync), pas de "SQLite" tout seul.
+
+## 12. Prochaine étape : Phase 11 — Offline-first
+
+Brancher les repositories existants (`TravelBookRepositoryImpl`, `ExperienceRepositoryImpl`) sur les data sources locales de la Phase 10 : lecture locale-first avec rafraîchissement Firestore en arrière-plan, écritures qui passent par SQLite immédiatement (UI réactive hors-ligne) puis Firestore quand la connexion revient. Pas de décision d'architecture actée à ce stade (stratégie exacte de résolution de conflits, détection de connectivité, etc.) au-delà de ce qui est déjà dans le brief — à concevoir en début de phase.
 
 ---
 
