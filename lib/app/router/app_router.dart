@@ -8,6 +8,8 @@ import '../../features/authentication/presentation/screens/forgot_password_scree
 import '../../features/authentication/presentation/screens/login_screen.dart';
 import '../../features/authentication/presentation/screens/register_screen.dart';
 import '../../features/authentication/presentation/screens/splash_screen.dart';
+import '../../features/experiences/presentation/screens/create_experience_screen.dart';
+import '../../features/experiences/presentation/screens/edit_experience_screen.dart';
 import '../../features/exploration/presentation/screens/explore_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
@@ -111,6 +113,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                         path: 'edit',
                         builder: (context, state) => EditTravelBookScreen(
                           travelBookId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'experiences/new',
+                        builder: (context, state) => CreateExperienceScreen(
+                          travelBookId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'experiences/:experienceId/edit',
+                        builder: (context, state) => EditExperienceScreen(
+                          travelBookId: state.pathParameters['id']!,
+                          experienceId: state.pathParameters['experienceId']!,
                         ),
                       ),
                     ],

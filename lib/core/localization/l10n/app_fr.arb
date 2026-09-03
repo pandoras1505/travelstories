@@ -89,5 +89,14 @@
   "travelBookEditTitle": "Modifier le carnet",
   "travelBookNoExperiencesYet": "Aucune expérience pour l'instant.",
   "commonDelete": "Supprimer",
-  "commonSave": "Enregistrer"
+  "commonSave": "Enregistrer",
+
+  "experienceTitleLabel": "Titre de l'expérience",
+  "experienceDescriptionLabel": "Description",
+  "experienceLocationLabel": "Lieu",
+  "experienceNewTitle": "Nouvelle expérience",
+  "experienceEditTitle": "Modifier l'expérience",
+  "experienceAdd": "Ajouter une expérience",
+  "experienceDeleteConfirmTitle": "Supprimer cette expérience ?",
+  "experienceDeleteConfirmMessage": "Cette action est irréversible."
 }

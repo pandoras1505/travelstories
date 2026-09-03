@@ -87,5 +87,14 @@
   "travelBookEditTitle": "Edit travel book",
   "travelBookNoExperiencesYet": "No experiences yet.",
   "commonDelete": "Delete",
-  "commonSave": "Save"
+  "commonSave": "Save",
+
+  "experienceTitleLabel": "Experience title",
+  "experienceDescriptionLabel": "Description",
+  "experienceLocationLabel": "Location",
+  "experienceNewTitle": "New experience",
+  "experienceEditTitle": "Edit experience",
+  "experienceAdd": "Add an experience",
+  "experienceDeleteConfirmTitle": "Delete this experience?",
+  "experienceDeleteConfirmMessage": "This action cannot be undone."
 }

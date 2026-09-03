@@ -4,11 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:travelstories/app/app.dart';
 import 'package:travelstories/features/authentication/domain/entities/auth_user.dart';
 import 'package:travelstories/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:travelstories/features/experiences/presentation/providers/experience_providers.dart';
 import 'package:travelstories/features/profile/presentation/providers/profile_providers.dart';
 import 'package:travelstories/features/travel_books/presentation/providers/travel_book_providers.dart';
 import 'package:travelstories/features/travel_books/presentation/screens/travel_book_detail_screen.dart';
 
 import '../../fakes/fake_auth_repository.dart';
+import '../../fakes/fake_experience_repository.dart';
 import '../../fakes/fake_profile_repository.dart';
 import '../../fakes/fake_travel_book_repository.dart';
 
@@ -28,6 +30,9 @@ void main() {
           profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
           travelBookRepositoryProvider.overrideWithValue(
             FakeTravelBookRepository(),
+          ),
+          experienceRepositoryProvider.overrideWithValue(
+            FakeExperienceRepository(),
           ),
         ],
         child: const TravelStoriesApp(),

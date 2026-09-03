@@ -56,16 +56,25 @@ service cloud.firestore {
 
         allow read: if parentBook().isPublic == true || isParentBookOwner();
 
+        function isValidLatitude(value) {
+          return value == null || (value is number && value >= -90 && value <= 90);
+        }
+
+        function isValidLongitude(value) {
+          return value == null || (value is number && value >= -180 && value <= 180);
+        }
+
+        // latitude/longitude are optional: location capture (current
+        // position / map picker) ships in a later phase, so experiences can
+        // be created with just a title/description until then.
         allow create: if isParentBookOwner()
           && request.resource.data.travelBookId == travelBookId
           && request.resource.data.ownerId == request.auth.uid
           && request.resource.data.title is string
           && request.resource.data.title.size() > 0
           && request.resource.data.title.size() <= 120
-          && request.resource.data.latitude is number
-          && request.resource.data.longitude is number
-          && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90
-          && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180;
+          && isValidLatitude(request.resource.data.latitude)
+          && isValidLongitude(request.resource.data.longitude);
 
         allow update: if isParentBookOwner()
           && request.resource.data.travelBookId == resource.data.travelBookId
