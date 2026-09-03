@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-03, fin de la **Phase 12** (Synchronization Engine).
+Dernière mise à jour : 2026-09-03, fin de la **Phase 13** (Security Rules audit).
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan (README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT restent à créer, voir "Dette de documentation" en bas).
 
 ---
@@ -31,8 +31,8 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 10 | SQLite | ✅ |
 | 11 | Offline-first | ✅ |
 | 12 | Synchronization Engine | ✅ (écritures uniquement — voir §14 pour le scope exact) |
-| 13 | Security Rules (audit complet) | ⬜ **prochaine étape** (règles de base déjà écrites et déployées au fil de l'eau, Phase 13 = revue/durcissement) |
-| 14 | Tests (suite complète) | ⬜ (tests déjà écrits au fil de l'eau, voir §7) |
+| 13 | Security Rules (audit complet) | ✅ (voir §16 — une faille réelle corrigée côté Storage) |
+| 14 | Tests (suite complète) | ⬜ **prochaine étape** (tests déjà écrits au fil de l'eau, voir §7) |
 | 15 | Performance | ⬜ |
 | 16 | CI/CD | ⬜ |
 | 17 | Documentation | ⬜ |
@@ -57,6 +57,8 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 - **Écritures offline = optimiste local + file de mutations rejouée par un `SyncEngine` générique** (`lib/core/sync/`) : chaque write (`createTravelBook`, `updateExperience`, etc.) met à jour le cache SQLite immédiatement (retour instantané à l'appelant, jamais un `await` bloquant sur Firestore) et pousse une entrée JSON dans la table `pending_mutations` ; le `SyncEngine` la rejoue dès que possible (au moment de l'enqueue si déjà en ligne, sinon au prochain retour de connectivité). **Ordre strict, jamais de retry parallèle** : un `flush()` s'arrête à la première mutation qui échoue plutôt que de sauter les suivantes — une écriture plus récente sur la même entité ne doit jamais atteindre Firestore avant une plus ancienne. `flush()` coalesce les appels concurrents (un seul passage réel à la fois, tous les appelants partagent son `Future`) — important pour que les tests (et un futur appel explicite "sync maintenant") puissent réellement attendre la fin d'un passage plutôt que de recevoir un retour immédiat trompeur.
 - **IDs générés côté client, pas par `.add()`** : `createTravelBook`/`createExperience` appellent `collection.doc().id` (synchrone, aucun aller-retour réseau) plutôt que `collection.add(data)`. Sans ça, créer hors-ligne serait impossible à faire proprement (`.add()` a besoin d'un ID que seul un `.set(id, data)` explicite permet de connaître à l'avance). Conséquence : `createdAt` est aussi un timestamp client (pas `serverTimestamp()`) pour rester identique entre le cache local et l'écriture Firestore différée — l'horloge de l'appareil fait foi pour le tri, pas celle du serveur (compromis assumé, voir §14).
 - **Scope du moteur de sync = documents seulement, pas les médias** : `uploadCover`/`uploadMedia`/`removeMedia` ne passent PAS par la file de mutations, ils vont toujours directement à Storage (comme avant la Phase 12). Storage n'est de toute façon pas encore activé (§4.3) — mettre en file des uploads de fichiers binaires hors-ligne (bytes à persister, retry resumable) est un problème sensiblement différent, repoussé jusqu'à ce que Storage soit réellement utilisable.
+- **`users/{uid}` ne stocke plus `email`** (retiré Phase 13, audit sécurité) : ce document est lisible par n'importe quel utilisateur connecté (jointure auteur sur les cartes de carnets publics, Phase 9), donc rien de sensible ne doit y résider. L'email du user courant est lu depuis `AuthUser` (Auth SDK, déjà disponible) plutôt que dupliqué dans Firestore — `ProfileScreen` lit maintenant `authStateChangesProvider` pour l'afficher, pas `UserProfile`. Les règles interdisent explicitement la clé `email` en écriture (`!('email' in request.resource.data.keys())`) comme garde-fou contre une régression future.
+- **Champs immuables imposés par les règles Firestore, pas seulement par convention côté app** : `ownerId`/`createdAt` sur `travelBooks`, `travelBookId`/`ownerId`/`createdAt` sur `experiences` — un `update` qui tenterait de les changer est refusé. `experienceCount` ne peut varier que de ±1 par écriture (jamais sauté à une valeur arbitraire) et ne peut pas être négatif. Nécessaire parce qu'un carnet `isPublic` expose `createdAt`/`experienceCount` comme signaux de tri dans Home/Explore (Phase 9) — sans ça, un propriétaire malveillant pourrait se faire artificiellement passer pour "récent" ou "populaire" via un appel Firestore direct (hors app).
 
 ## 4. Contraintes d'environnement découvertes (important, relire avant de perdre du temps à les re-découvrir)
 
@@ -72,6 +74,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 9. **Annuler l'abonnement à un `Stream` généré par `async*` alors qu'il est suspendu dans un `await for` sur un `StreamController` encore ouvert (et sans nouvel événement) bloque indéfiniment `subscription.cancel()`** — repéré en testant `local_first_stream.dart` : `await subscription.cancel()` ne se résolvait jamais tant que le `StreamController` distant n'était pas fermé. Toujours fermer le controller "distant" AVANT d'annuler l'abonnement au stream généré, jamais l'inverse, dans ce genre de test (`await remoteController.close(); await subscription.cancel();`).
 10. **Un appel à un platform channel sans handler enregistré dans `flutter_test` (ex. `connectivity_plus` sans override) ne fait PAS planter le widget test** : Riverpod absorbe l'exception (`MissingPluginException` ou équivalent) dans l'état `AsyncError` du provider, donc un widget qui lit la valeur via `.value` (nullable) plutôt que `.requireValue`/`!` s'en sort avec un état "vide/neutre" sans crash ni override nécessaire dans les tests existants. Vérifié explicitement pour `OfflineBanner`/`isOnlineProvider` — aucun test existant n'a eu besoin d'un `connectivityServiceProvider.overrideWithValue(...)`.
 11. **Un `Future`-returning `flush()`/traitement en arrière-plan qui se contente de `if (_busy) return;` (retour immédiat sans rien faire) est un piège en test** : un appelant qui `await` ce genre de méthode croit à tort que le travail est terminé alors qu'un autre appel est peut-être encore en cours — repéré Phase 12 sur `SyncEngine.flush()`, où deux `enqueue()` back-to-back déclenchaient chacun leur propre `flush()` interne, et un test tentant d'attendre la fin recevait un retour prématuré, laissant une opération SQLite en vol qui plantait (`database_closed`) au `tearDown` du test suivant. Corrigé en faisant partager aux appels concurrents le **même `Future`** en cours (`_inFlight ??= _run().whenComplete(() => _inFlight = null)`) plutôt qu'un simple booléen de garde — un `await engine.flush()` explicite dans un test attend alors fiablement que tout passage en cours (même déclenché ailleurs) soit réellement terminé.
+12. **L'émulateur Firestore/Storage ne démarre pas ici non plus** : `firebase emulators:start` télécharge son `.jar` sans problème (Google Cloud Storage n'est pas bloqué), mais l'émulateur lui-même plante immédiatement au lancement — `java.io.IOException: Unable to establish loopback connection` en essayant d'ouvrir un `NioEventLoopGroup` (Netty). **Exactement la même cause racine que le blocage des builds Android (§4.1)** : tout JVM qui tente d'ouvrir un socket loopback local échoue sur cette machine, pas seulement Gradle. Testé explicitement avant la Phase 13 en espérant écrire de vrais tests unitaires sur `firestore.rules`/`storage.rules` (`@firebase/rules-unit-testing`) — impossible ici. Les règles ne sont donc validées que par relecture attentive + cohérence avec ce que le code écrit réellement, jamais exécutées avant déploiement.
 
 ## 5. État Firebase (projet `travelstories-app`)
 
@@ -95,7 +98,7 @@ flutter analyze
 flutter test
 ```
 
-Dernier statut connu (fin Phase 12) : `flutter analyze` → 0 issue, `flutter test` → **55/55** tests verts.
+Dernier statut connu (fin Phase 13) : `flutter analyze` → 0 issue, `flutter test` → **55/55** tests verts (aucun nouveau test cette phase — voir §4.12, les règles ne sont pas exécutables ici).
 
 ## 7. Tests existants
 
@@ -122,6 +125,7 @@ Aucun test dédié pour : geolocator/carte (Phase 7) ni video_player (Phase 8) �
 - [ ] Ajouter l'empreinte SHA-1 Android (debug + release) dans la console Firebase pour Google Sign-In.
 - [ ] Tester un vrai build Android/iOS sur une machine sans la restriction réseau (§4.1) ou sur un appareil physique.
 - [ ] Décider si on reste sur OpenStreetMap définitivement ou si Google Maps sera reconsidéré plus tard (carte bancaire disponible).
+- [ ] **Si des documents `users/{uid}` réels existent déjà dans le projet Firestore live** (créés avant la Phase 13), leur champ `email` traîne encore — l'app a arrêté de l'écrire mais rien ne l'a supprimé rétroactivement des documents existants. À nettoyer manuellement via la console Firebase (ou un script admin) si nécessaire ; pas fait ici pour ne pas toucher aux données live sans confirmation explicite. Probablement sans objet : aucun test "live" n'a été possible dans cet environnement (§4), donc il n'y a peut-être aucun vrai document utilisateur à ce jour.
 
 ## 9. Dette de documentation (Phase 17, pas encore commencée)
 
@@ -179,9 +183,20 @@ Les écritures de documents (pas les médias, voir plus bas) fonctionnent mainte
   - Vraie résolution de conflits multi-appareils : la stratégie ici est "dernière écriture locale gagne" par construction (une seule file par appareil, rejouée dans l'ordre) — pas de détection ni de fusion si DEUX appareils du même utilisateur modifient le même carnet hors-ligne en parallèle.
   - Pas de UI dédiée "N modifications en attente de synchronisation" — le bandeau `OfflineBanner` de la Phase 11 (minuteur fixe de 3s) n'a pas été raccordé à l'état réel de la file d'attente ; ce serait une amélioration cohérente à faire plus tard mais pas nécessaire au fonctionnement du moteur de sync.
 
-## 15. Prochaine étape : Phase 13 — Security Rules (audit complet)
+## 16. Phase 13 — ce qui a été livré (Security Rules audit)
 
-Revue et durcissement des `firestore.rules`/`storage.rules` déjà écrites au fil de l'eau (Phases 2–12). Points à vérifier en particulier : les règles couvrent-elles bien tous les nouveaux champs/chemins introduits depuis (rien de nouveau côté Firestore dans les Phases 9-12 en fait, seulement des index) ; cohérence entre ce que le `SyncEngine` écrit réellement (Phase 12) et ce que les règles autorisent. Pas de décision d'architecture actée à ce stade au-delà de ce qui est déjà dans le brief.
+Relecture complète de `firestore.rules`/`storage.rules` contre ce que le code écrit réellement aujourd'hui (Phases 2–12 accumulées). Pas de vérification exécutable possible (§4.12) — validé par lecture attentive + cohérence avec les data sources, pas par des tests qui tournent. **Pas encore déployé** (voir décision de déploiement ci-dessous).
+
+- **Faille corrigée — `storage.rules`, la plus sérieuse trouvée** : `travelBooks/{id}/cover/*` et `.../experiences/{id}/*` n'exigeaient qu'`isSignedIn()` en écriture ET en suppression, sans vérifier que l'appelant possédait vraiment le carnet. N'importe quel utilisateur connecté pouvait donc écraser OU supprimer la couverture ou les médias d'un carnet appartenant à quelqu'un d'autre. Le commentaire d'origine affirmait que les règles Storage "ne peuvent pas consulter Firestore à moindre coût" — c'est faux, `firestore.get(/databases/(default)/documents/...)` existe précisément pour ça. Corrigé avec `isTravelBookOwner(travelBookId)`, qui fait cette vérification croisée.
+- **`users/{uid}` n'expose plus `email`** — voir §3 pour le détail (retiré de l'entité `UserProfile`, `ProfileScreen` lit `AuthUser.email` à la place). C'était le seul champ réellement sensible exposé à tous les utilisateurs connectés via `allow read: if isSignedIn()`.
+- **Champs immuables + bornes numériques ajoutés dans `firestore.rules`** (`travelBooks` et `experiences`) : `ownerId`/`createdAt`/`travelBookId` ne peuvent plus être modifiés par un `update` ; `experienceCount` ne peut varier que de ±1 et jamais devenir négatif — voir §3 pour le "pourquoi" (gaming du tri Home/Explore).
+- **Validation de champs renforcée et harmonisée entre `create` et `update`** : `description` (type + plafond 10 000 caractères, aucune limite n'existait avant), `startDate`/`endDate` (doivent être `timestamp` ou `null`), `locationName` (`string` ou `null`, ≤ 200 caractères), `mediaType` (doit être `'text'`/`'image'`/`'video'`). Avant cette phase, la règle `update` des expériences ne revalidait presque rien (juste `travelBookId`/`ownerId`) alors que `create` validait le titre — un `update` direct (hors app) aurait donc pu poser un titre vide ou surdimensionné là où `create` l'aurait refusé.
+- **Décision de déploiement** : ces règles sont plus strictes, jamais plus permissives, donc le risque de casser un usage légitime est faible — mais elles n'ont pas pu être testées en conditions réelles (§4.12) et touchent un projet Firebase live. **Pas déployées automatiquement dans cette phase** ; à déployer via `firebase deploy --only firestore:rules,storage:rules` après relecture, quand l'utilisateur confirme (`storage:rules` échouera de toute façon tant que Storage n'est pas activé — voir §4.3/§8 — donc `--only firestore:rules` seul en attendant).
+- **Hors scope, noté mais pas corrigé** : nettoyage rétroactif des documents `users/{uid}` live qui auraient déjà un champ `email` (voir §8) ; pas de limite de taux/anti-abus (Firestore/Storage n'offrent pas de rate-limiting natif dans les règles elles-mêmes — ce serait un sujet Cloud Functions, hors scope du brief actuel).
+
+## 17. Prochaine étape : Phase 14 — Tests (suite complète)
+
+Les tests ont été écrits au fil de l'eau à chaque phase (voir §7, 55 tests). Cette phase consiste probablement à combler les trous connus plutôt qu'à tout reprendre : pas de test pour geolocator/carte (Phase 7) ni video_player (Phase 8) — plugins natifs non exerçables en environnement headless (§4) — et aucune vérification "live" Firebase possible non plus. Pas de décision d'architecture actée à ce stade au-delà de ce qui est déjà dans le brief ; à voir si la phase consiste à ajouter de la couverture (laquelle, vu les limitations d'environnement ?) ou à documenter/accepter ces trous comme définitifs.
 
 ---
 

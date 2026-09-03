@@ -29,7 +29,6 @@ class FakeProfileRepository implements ProfileRepository {
   Future<void> ensureProfileExists({
     required String uid,
     required String displayName,
-    required String email,
     String? photoUrl,
   }) async {
     if (_profiles.containsKey(uid)) return;
@@ -37,7 +36,6 @@ class FakeProfileRepository implements ProfileRepository {
     final profile = UserProfile(
       id: uid,
       displayName: displayName,
-      email: email,
       photoUrl: photoUrl,
       createdAt: now,
       updatedAt: now,

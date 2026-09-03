@@ -22,7 +22,6 @@ final profileBootstrapProvider = Provider<void>((ref) {
         .call(
           uid: user.uid,
           displayName: user.displayName ?? '',
-          email: user.email ?? '',
           photoUrl: user.photoUrl,
         );
   }, fireImmediately: true);

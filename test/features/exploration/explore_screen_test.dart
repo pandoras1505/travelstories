@@ -24,11 +24,7 @@ void main() {
 
     final travelBooks = FakeTravelBookRepository();
     final profiles = FakeProfileRepository();
-    await profiles.ensureProfileExists(
-      uid: 'owner-1',
-      displayName: 'Amina',
-      email: 'amina@example.com',
-    );
+    await profiles.ensureProfileExists(uid: 'owner-1', displayName: 'Amina');
 
     await travelBooks.createTravelBook(
       ownerId: 'owner-1',

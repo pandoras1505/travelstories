@@ -12,7 +12,6 @@ abstract class ProfileRepository {
   Future<void> ensureProfileExists({
     required String uid,
     required String displayName,
-    required String email,
     String? photoUrl,
   });
 

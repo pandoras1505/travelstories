@@ -17,6 +17,11 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final profileAsync = ref.watch(currentUserProfileProvider);
+    // The users/{uid} doc no longer stores email (Phase 13 security
+    // audit — it's broadly readable for the author join on public book
+    // cards, so it must never carry anything sensitive). The signed-in
+    // user's own email is already available from the Auth SDK.
+    final email = ref.watch(authStateChangesProvider).value?.email;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navProfile)),
@@ -57,7 +62,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                profile.email,
+                email ?? '',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,

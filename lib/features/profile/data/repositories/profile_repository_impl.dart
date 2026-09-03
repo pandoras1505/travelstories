@@ -41,7 +41,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<void> ensureProfileExists({
     required String uid,
     required String displayName,
-    required String email,
     String? photoUrl,
   }) async {
     try {
@@ -51,7 +50,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
       await _firestoreDataSource.set(uid, {
         'id': uid,
         'displayName': displayName,
-        'email': email,
         'photoUrl': photoUrl,
         'createdAt': fs.FieldValue.serverTimestamp(),
         'updatedAt': fs.FieldValue.serverTimestamp(),
@@ -119,7 +117,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
     return UserProfile(
       id: data['id'] as String? ?? snapshot.id,
       displayName: data['displayName'] as String? ?? '',
-      email: data['email'] as String? ?? '',
       photoUrl: data['photoUrl'] as String?,
       createdAt: (data['createdAt'] as fs.Timestamp?)?.toDate() ?? now,
       updatedAt: (data['updatedAt'] as fs.Timestamp?)?.toDate() ?? now,

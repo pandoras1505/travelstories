@@ -21,6 +21,17 @@ service firebase.storage {
         && request.resource.size < 200 * 1024 * 1024;
     }
 
+    // Cross-service ownership check against the travelBooks document —
+    // Storage rules can call `firestore.get()` for exactly this. (An
+    // earlier version of this file assumed this wasn't possible and left
+    // cover/media writes open to any signed-in user — fixed in the Phase
+    // 13 security audit.)
+    function isTravelBookOwner(travelBookId) {
+      return isSignedIn()
+        && firestore.get(/databases/(default)/documents/travelBooks/$(travelBookId)).data.ownerId
+          == request.auth.uid;
+    }
+
     // users/{uid}/profile/* — only the owner may write; profile photos are
     // publicly readable (shown on public travel books/profiles).
     match /users/{uid}/profile/{fileName} {
@@ -29,23 +40,24 @@ service firebase.storage {
       allow delete: if isOwner(uid);
     }
 
-    // travelBooks/{travelBookId}/cover/* — the app enforces ownership of
-    // the parent travel book before issuing an upload; Storage rules alone
-    // cannot look up Firestore ownership cheaply, so writes require auth
-    // and a valid image, and reads are public (public/private gating for
-    // book content happens at the Firestore layer, not Storage).
+    // travelBooks/{travelBookId}/cover/* — reads are public (public/private
+    // gating for book content happens at the Firestore layer, not
+    // Storage); only the travel book's owner may write or delete.
     match /travelBooks/{travelBookId}/cover/{fileName} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
-      allow delete: if isSignedIn();
+      allow write: if isTravelBookOwner(travelBookId) && isValidImage();
+      allow delete: if isTravelBookOwner(travelBookId);
     }
 
     // travelBooks/{travelBookId}/experiences/{experienceId}/* — images or
-    // video for one experience.
+    // video for one experience; same ownership check as the cover, keyed
+    // off the parent travel book (experiences don't carry their own
+    // ownerId field reachable from a Storage path).
     match /travelBooks/{travelBookId}/experiences/{experienceId}/{fileName} {
       allow read: if true;
-      allow write: if isSignedIn() && (isValidImage() || isValidVideo());
-      allow delete: if isSignedIn();
+      allow write: if isTravelBookOwner(travelBookId)
+        && (isValidImage() || isValidVideo());
+      allow delete: if isTravelBookOwner(travelBookId);
     }
   }
 }

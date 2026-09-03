@@ -26,16 +26,8 @@ void main() {
       final travelBooks = FakeTravelBookRepository();
       final profiles = FakeProfileRepository();
 
-      await profiles.ensureProfileExists(
-        uid: 'owner-1',
-        displayName: 'Amina',
-        email: 'amina@example.com',
-      );
-      await profiles.ensureProfileExists(
-        uid: 'owner-2',
-        displayName: 'Kenji',
-        email: 'kenji@example.com',
-      );
+      await profiles.ensureProfileExists(uid: 'owner-1', displayName: 'Amina');
+      await profiles.ensureProfileExists(uid: 'owner-2', displayName: 'Kenji');
 
       // Created in this order (oldest first); FakeTravelBookRepository
       // offsets each createdAt by insertion order, so "recent" sort doesn't

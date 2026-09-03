@@ -13,11 +13,26 @@ service cloud.firestore {
 
     // --- users/{uid} ---------------------------------------------------
     match /users/{uid} {
+      // Readable by any signed-in user (not just the owner): the public
+      // feed/explore cards join in the author's displayName/photoUrl for
+      // books that aren't theirs (see PublicTravelBookCard). This document
+      // must therefore never carry anything sensitive — email deliberately
+      // isn't stored here (the app reads it from the Auth user instead);
+      // the `!('email' in ...)` checks below are a backstop against that
+      // regressing, not a currently-used feature.
+      function isValidProfileFields() {
+        return request.resource.data.displayName is string
+          && request.resource.data.displayName.size() <= 100
+          && !('email' in request.resource.data.keys());
+      }
+
       allow read: if isSignedIn();
       allow create: if isOwner(uid)
-        && request.resource.data.id == uid;
+        && request.resource.data.id == uid
+        && isValidProfileFields();
       allow update: if isOwner(uid)
-        && request.resource.data.id == resource.data.id;
+        && request.resource.data.id == resource.data.id
+        && isValidProfileFields();
       allow delete: if false;
     }
 
@@ -27,20 +42,47 @@ service cloud.firestore {
         return isSignedIn() && resource.data.ownerId == request.auth.uid;
       }
 
+      function isValidDate(value) {
+        return value == null || value is timestamp;
+      }
+
+      // Shared by create/update: title/description are the only free-text
+      // fields a client fully controls, so they get an explicit size cap
+      // (defense in depth — the app's own form already limits title to
+      // 120 chars, nothing currently caps description client-side).
+      function isValidBookFields() {
+        return request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 120
+          && request.resource.data.description is string
+          && request.resource.data.description.size() <= 10000
+          && request.resource.data.isPublic is bool
+          && isValidDate(request.resource.data.startDate)
+          && isValidDate(request.resource.data.endDate);
+      }
+
       allow read: if resource.data.isPublic == true || isBookOwner();
 
       allow create: if isSignedIn()
         && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
-        && request.resource.data.title.size() <= 120
-        && request.resource.data.isPublic is bool;
+        && isValidBookFields();
 
+      // ownerId/createdAt are immutable once set. experienceCount is only
+      // ever supposed to move by exactly ±1, atomically alongside an
+      // experience create/delete (see the subcollection rules below) —
+      // never set directly to an arbitrary value, which would let an
+      // owner fake "popularity" on a public book. Every other field
+      // (title, description, dates, isPublic, publishedAt,
+      // coverImageUrl, updatedAt) is otherwise owner-controlled.
       allow update: if isBookOwner()
         && request.resource.data.ownerId == resource.data.ownerId
-        && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
-        && request.resource.data.title.size() <= 120;
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.experienceCount
+          >= resource.data.experienceCount - 1
+        && request.resource.data.experienceCount
+          <= resource.data.experienceCount + 1
+        && request.resource.data.experienceCount >= 0
+        && isValidBookFields();
 
       allow delete: if isBookOwner();
 
@@ -64,21 +106,40 @@ service cloud.firestore {
           return value == null || (value is number && value >= -180 && value <= 180);
         }
 
-        // latitude/longitude are optional: location capture (current
-        // position / map picker) ships in a later phase, so experiences can
-        // be created with just a title/description until then.
+        function isValidLocationName(value) {
+          return value == null || (value is string && value.size() <= 200);
+        }
+
+        // latitude/longitude/locationName are optional: manual title/
+        // description entry works without a captured position ("use my
+        // location" / "pick on map" are conveniences, not a requirement —
+        // see HANDOFF §3).
+        function isValidExperienceFields() {
+          return request.resource.data.title is string
+            && request.resource.data.title.size() > 0
+            && request.resource.data.title.size() <= 120
+            && request.resource.data.description is string
+            && request.resource.data.description.size() <= 10000
+            && isValidLatitude(request.resource.data.latitude)
+            && isValidLongitude(request.resource.data.longitude)
+            && isValidLocationName(request.resource.data.locationName)
+            && request.resource.data.mediaType in ['text', 'image', 'video'];
+        }
+
         allow create: if isParentBookOwner()
           && request.resource.data.travelBookId == travelBookId
           && request.resource.data.ownerId == request.auth.uid
-          && request.resource.data.title is string
-          && request.resource.data.title.size() > 0
-          && request.resource.data.title.size() <= 120
-          && isValidLatitude(request.resource.data.latitude)
-          && isValidLongitude(request.resource.data.longitude);
+          && isValidExperienceFields();
 
+        // travelBookId/ownerId/createdAt are immutable once set — the app
+        // never changes them after creation (moving an experience to a
+        // different book isn't a feature, so there's no legitimate reason
+        // for an update to touch any of the three).
         allow update: if isParentBookOwner()
           && request.resource.data.travelBookId == resource.data.travelBookId
-          && request.resource.data.ownerId == resource.data.ownerId;
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.createdAt == resource.data.createdAt
+          && isValidExperienceFields();
 
         allow delete: if isParentBookOwner();
       }
