@@ -11,12 +11,6 @@
         android:label="TravelStories"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        <!-- TODO: replace with the real Maps SDK for Android API key once
-             created in Google Cloud Console (restricted to this app's
-             package name + SHA-1). Maps tiles won't render without it. -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="REPLACE_WITH_GOOGLE_MAPS_API_KEY"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

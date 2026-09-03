@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../domain/entities/geo_position.dart';
 import '../providers/location_providers.dart';
 
-/// Full-screen map: tap anywhere to drop a pin, or tap the "my location"
-/// button to center on the device's current position. Confirming returns
-/// the picked [GeoPosition] via `Navigator.pop`.
+/// Full-screen map (OpenStreetMap tiles via `flutter_map` — no API key or
+/// billing account required, unlike Google Maps): tap anywhere to drop a
+/// pin, or tap the "my location" button to center on the device's current
+/// position. Confirming returns the picked [GeoPosition] via
+/// `Navigator.pop`.
 ///
-/// All `google_maps_flutter` usage in the app is confined to this file (and
+/// All `flutter_map` usage in the app is confined to this file (and
 /// [ExperienceMapPreview]) — swapping map providers later only touches
 /// these two widgets, not the rest of the app, per the "don't couple the
 /// whole app to one map provider" requirement.
@@ -26,7 +29,7 @@ class LocationPickerScreen extends ConsumerStatefulWidget {
 }
 
 class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
-  GoogleMapController? _mapController;
+  final _mapController = MapController();
   LatLng? _picked;
   bool _locating = false;
 
@@ -54,11 +57,7 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
       final latLng = LatLng(position.latitude, position.longitude);
       if (!mounted) return;
       setState(() => _picked = latLng);
-      if (recenter) {
-        await _mapController?.animateCamera(
-          CameraUpdate.newLatLngZoom(latLng, 14),
-        );
-      }
+      if (recenter) _mapController.move(latLng, 14);
     } catch (_) {
       // Permission denied / service disabled / no fix yet — the map still
       // works for manual tap-to-pick, so this failure is silent.
@@ -92,23 +91,34 @@ class _LocationPickerScreenState extends ConsumerState<LocationPickerScreen> {
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: initialCenter,
-              zoom: _picked == null ? 1 : 14,
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: initialCenter,
+              initialZoom: _picked == null ? 1 : 14,
+              onTap: (tapPosition, point) => setState(() => _picked = point),
             ),
-            onMapCreated: (controller) => _mapController = controller,
-            onTap: (latLng) => setState(() => _picked = latLng),
-            markers: _picked == null
-                ? const {}
-                : {
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.travelstories.app',
+              ),
+              if (_picked != null)
+                MarkerLayer(
+                  markers: [
                     Marker(
-                      markerId: const MarkerId('picked'),
-                      position: _picked!,
+                      point: _picked!,
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        Icons.location_pin,
+                        size: 40,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
-                  },
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
+                  ],
+                ),
+            ],
           ),
           Positioned(
             right: AppSpacing.md,

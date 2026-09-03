@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/app_radius.dart';
 import '../../domain/entities/geo_position.dart';
@@ -14,21 +15,40 @@ class ExperienceMapPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final latLng = LatLng(position.latitude, position.longitude);
+    final point = LatLng(position.latitude, position.longitude);
     return ClipRRect(
       borderRadius: AppRadius.mdRadius,
       child: SizedBox(
         height: 160,
         child: IgnorePointer(
-          child: GoogleMap(
-            initialCameraPosition: CameraPosition(target: latLng, zoom: 13),
-            markers: {
-              Marker(markerId: const MarkerId('experience'), position: latLng),
-            },
-            zoomControlsEnabled: false,
-            myLocationButtonEnabled: false,
-            scrollGesturesEnabled: false,
-            liteModeEnabled: true,
+          child: FlutterMap(
+            options: MapOptions(
+              initialCenter: point,
+              initialZoom: 13,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.none,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.travelstories.app',
+              ),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: point,
+                    width: 32,
+                    height: 32,
+                    child: Icon(
+                      Icons.location_pin,
+                      size: 32,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

@@ -55,7 +55,8 @@ dependencies:
   video_thumbnail: ^0.5.6
   geolocator: ^14.0.3
   geocoding: ^5.0.0
-  google_maps_flutter: ^2.18.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_test:
