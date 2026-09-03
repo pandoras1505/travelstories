@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appName": "TravelStories",
+  "appTagline": "Turn your travels into stories.",
+  "navHome": "Home",
+  "navExplore": "Explore",
+  "navCreate": "Create",
+  "navTravelBooks": "My Travel Books",
+  "navProfile": "Profile",
+  "authLogin": "Log in",
+  "authRegister": "Sign up",
+  "authForgotPassword": "Forgot password",
+  "commonLoading": "Loading...",
+  "commonRetry": "Retry",
+  "commonError": "Something went wrong",
+  "commonEmpty": "Nothing to show yet",
+  "commonOffline": "You are offline",
+  "commonBackOnline": "Back online. Syncing..."
+}

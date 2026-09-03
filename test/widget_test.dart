@@ -1,30 +1,37 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:travelstories/main.dart';
+import 'package:travelstories/app/app.dart';
+import 'package:travelstories/app/router/app_router.dart';
+import 'package:travelstories/app/router/route_paths.dart';
+import 'package:travelstories/features/authentication/presentation/screens/login_screen.dart';
+import 'package:travelstories/features/authentication/presentation/screens/splash_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('boots on the splash screen then redirects to login', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ProviderScope(child: TravelStoriesApp()));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.byType(SplashScreen), findsOneWidget);
+    expect(find.byType(LoginScreen), findsNothing);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 900));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(SplashScreen), findsNothing);
+    expect(find.byType(LoginScreen), findsOneWidget);
   });
+
+  testWidgets(
+    'the authenticated shell exposes all five bottom navigation tabs',
+    (tester) async {
+      appRouter.go(RoutePaths.home);
+      await tester.pumpWidget(const ProviderScope(child: TravelStoriesApp()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(NavigationDestination), findsNWidgets(5));
+    },
+  );
 }

@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Generated code (build_runner: freezed / json_serializable)
+*.g.dart
+*.freezed.dart
+
+# Generated localization (flutter gen-l10n, generate: true in pubspec.yaml)
+lib/core/localization/generated/
+

@@ -1,0 +1,21 @@
+{
+  "@@locale": "fr",
+  "appName": "TravelStories",
+  "@appName": {"description": "Nom de l'application"},
+  "appTagline": "Transformez vos voyages en histoires.",
+  "@appTagline": {"description": "Slogan affiché sur le splash screen"},
+  "navHome": "Accueil",
+  "navExplore": "Explorer",
+  "navCreate": "Créer",
+  "navTravelBooks": "Mes carnets",
+  "navProfile": "Profil",
+  "authLogin": "Connexion",
+  "authRegister": "Inscription",
+  "authForgotPassword": "Mot de passe oublié",
+  "commonLoading": "Chargement...",
+  "commonRetry": "Réessayer",
+  "commonError": "Une erreur est survenue",
+  "commonEmpty": "Rien à afficher pour le moment",
+  "commonOffline": "Vous êtes hors ligne",
+  "commonBackOnline": "Connexion rétablie. Synchronisation..."
+}
