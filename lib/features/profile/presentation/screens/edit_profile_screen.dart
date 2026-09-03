@@ -33,12 +33,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _pickAvatar(ImageSource source) async {
     Navigator.of(context).pop();
-    final picked = await ImagePicker().pickImage(source: source, maxWidth: 1024, maxHeight: 1024);
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+    );
     if (picked == null || !mounted) return;
     final bytes = await picked.readAsBytes();
-    final extension = picked.name.contains('.') ? picked.name.split('.').last : 'jpg';
+    final extension = picked.name.contains('.')
+        ? picked.name.split('.').last
+        : 'jpg';
     if (!mounted) return;
-    await ref.read(editProfileControllerProvider.notifier).uploadAvatar(fileBytes: bytes, fileExtension: extension);
+    await ref
+        .read(editProfileControllerProvider.notifier)
+        .uploadAvatar(fileBytes: bytes, fileExtension: extension);
   }
 
   void _showAvatarPicker() {
@@ -67,7 +75,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
-    ref.read(editProfileControllerProvider.notifier).saveDisplayName(_displayNameController.text.trim());
+    ref
+        .read(editProfileControllerProvider.notifier)
+        .saveDisplayName(_displayNameController.text.trim());
   }
 
   @override
@@ -82,7 +92,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (error is StorageException) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(storageErrorMessage(context, error))));
+          ..showSnackBar(
+            SnackBar(content: Text(storageErrorMessage(context, error))),
+          );
       } else if (error is AppException) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
@@ -127,7 +139,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     profile.displayName.isNotEmpty
                                         ? profile.displayName[0].toUpperCase()
                                         : '?',
-                                    style: Theme.of(context).textTheme.headlineMedium,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.headlineMedium,
                                   )
                                 : null,
                           ),
@@ -136,7 +150,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             bottom: 0,
                             child: CircleAvatar(
                               radius: 16,
-                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
                               child: Icon(
                                 Icons.edit,
                                 size: 16,
@@ -150,8 +166,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     const SizedBox(height: AppSpacing.xl),
                     TextFormField(
                       controller: _displayNameController,
-                      decoration: InputDecoration(labelText: l10n.authDisplayNameLabel),
-                      validator: (value) => validationErrorMessage(context, Validators.displayName(value)),
+                      decoration: InputDecoration(
+                        labelText: l10n.authDisplayNameLabel,
+                      ),
+                      validator: (value) => validationErrorMessage(
+                        context,
+                        Validators.displayName(value),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     FilledButton(

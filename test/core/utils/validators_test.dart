@@ -11,7 +11,10 @@ void main() {
     test('rejects malformed addresses', () {
       expect(Validators.email('not-an-email'), ValidationError.emailInvalid);
       expect(Validators.email('missing@domain'), ValidationError.emailInvalid);
-      expect(Validators.email('@missing-local.com'), ValidationError.emailInvalid);
+      expect(
+        Validators.email('@missing-local.com'),
+        ValidationError.emailInvalid,
+      );
     });
 
     test('accepts a well-formed address', () {
@@ -36,7 +39,10 @@ void main() {
   group('Validators.displayName', () {
     test('rejects empty or whitespace-only', () {
       expect(Validators.displayName(''), ValidationError.displayNameRequired);
-      expect(Validators.displayName('   '), ValidationError.displayNameRequired);
+      expect(
+        Validators.displayName('   '),
+        ValidationError.displayNameRequired,
+      );
     });
 
     test('accepts a non-empty name', () {
@@ -46,11 +52,50 @@ void main() {
 
   group('Validators.confirmPassword', () {
     test('rejects a mismatch', () {
-      expect(Validators.confirmPassword('abcd1234', 'abcd1235'), ValidationError.passwordsDoNotMatch);
+      expect(
+        Validators.confirmPassword('abcd1234', 'abcd1235'),
+        ValidationError.passwordsDoNotMatch,
+      );
     });
 
     test('accepts a match', () {
       expect(Validators.confirmPassword('abcd1234', 'abcd1234'), isNull);
+    });
+  });
+
+  group('Validators.title', () {
+    test('rejects empty or whitespace-only', () {
+      expect(Validators.title(''), ValidationError.titleRequired);
+      expect(Validators.title('   '), ValidationError.titleRequired);
+    });
+
+    test('rejects over 120 characters', () {
+      expect(Validators.title('a' * 121), ValidationError.titleTooLong);
+    });
+
+    test('accepts a normal title', () {
+      expect(Validators.title('Road trip au Togo'), isNull);
+      expect(Validators.title('a' * 120), isNull);
+    });
+  });
+
+  group('Validators.dateRange', () {
+    test('rejects an end date before the start date', () {
+      final start = DateTime(2026, 6, 10);
+      final end = DateTime(2026, 6, 1);
+      expect(
+        Validators.dateRange(start, end),
+        ValidationError.endDateBeforeStartDate,
+      );
+    });
+
+    test('accepts a valid range or missing dates', () {
+      final start = DateTime(2026, 6, 1);
+      final end = DateTime(2026, 6, 10);
+      expect(Validators.dateRange(start, end), isNull);
+      expect(Validators.dateRange(null, null), isNull);
+      expect(Validators.dateRange(start, null), isNull);
+      expect(Validators.dateRange(null, end), isNull);
     });
   });
 }

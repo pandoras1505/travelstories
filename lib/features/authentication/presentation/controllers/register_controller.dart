@@ -6,7 +6,11 @@ class RegisterController extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  Future<void> register({required String email, required String password, required String displayName}) async {
+  Future<void> register({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref
@@ -16,4 +20,5 @@ class RegisterController extends AsyncNotifier<void> {
   }
 }
 
-final registerControllerProvider = AsyncNotifierProvider<RegisterController, void>(RegisterController.new);
+final registerControllerProvider =
+    AsyncNotifierProvider<RegisterController, void>(RegisterController.new);

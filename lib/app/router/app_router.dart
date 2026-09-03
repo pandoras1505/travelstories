@@ -12,13 +12,19 @@ import '../../features/exploration/presentation/screens/explore_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
-import '../../features/travel_books/presentation/screens/create_entry_screen.dart';
+import '../../features/travel_books/presentation/screens/create_travel_book_screen.dart';
+import '../../features/travel_books/presentation/screens/edit_travel_book_screen.dart';
+import '../../features/travel_books/presentation/screens/travel_book_detail_screen.dart';
 import '../../features/travel_books/presentation/screens/travel_books_screen.dart';
 import 'app_shell.dart';
 import 'go_router_refresh_stream.dart';
 import 'route_paths.dart';
 
-const _authRoutes = {RoutePaths.login, RoutePaths.register, RoutePaths.forgotPassword};
+const _authRoutes = {
+  RoutePaths.login,
+  RoutePaths.register,
+  RoutePaths.forgotPassword,
+};
 
 /// The app-wide route tree, built once by `ref.read(authRepositoryProvider)`
 /// so it goes through the same DI seam as the rest of the app (tests can
@@ -45,27 +51,48 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: RoutePaths.splash, builder: (context, state) => const SplashScreen()),
-      GoRoute(path: RoutePaths.login, builder: (context, state) => const LoginScreen()),
-      GoRoute(path: RoutePaths.register, builder: (context, state) => const RegisterScreen()),
+      GoRoute(
+        path: RoutePaths.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.register,
+        builder: (context, state) => const RegisterScreen(),
+      ),
       GoRoute(
         path: RoutePaths.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            AppShell(navigationShell: navigationShell),
         branches: [
           StatefulShellBranch(
-            routes: [GoRoute(path: RoutePaths.home, builder: (context, state) => const HomeScreen())],
-          ),
-          StatefulShellBranch(
             routes: [
-              GoRoute(path: RoutePaths.explore, builder: (context, state) => const ExploreScreen()),
+              GoRoute(
+                path: RoutePaths.home,
+                builder: (context, state) => const HomeScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: RoutePaths.create, builder: (context, state) => const CreateEntryScreen()),
+              GoRoute(
+                path: RoutePaths.explore,
+                builder: (context, state) => const ExploreScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.create,
+                builder: (context, state) => const CreateTravelBookScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(
@@ -73,6 +100,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: RoutePaths.travelBooks,
                 builder: (context, state) => const TravelBooksScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => TravelBookDetailScreen(
+                      travelBookId: state.pathParameters['id']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) => EditTravelBookScreen(
+                          travelBookId: state.pathParameters['id']!,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
@@ -93,6 +136,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(body: ErrorView(message: state.error?.message)),
+    errorBuilder: (context, state) =>
+        Scaffold(body: ErrorView(message: state.error?.message)),
   );
 });

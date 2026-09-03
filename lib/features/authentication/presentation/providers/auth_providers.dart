@@ -9,7 +9,9 @@ import '../../domain/usecases/sign_in_with_email_usecase.dart';
 import '../../domain/usecases/sign_in_with_google_usecase.dart';
 import '../../domain/usecases/sign_out_usecase.dart';
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) => authRepository);
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => authRepository,
+);
 
 /// The current auth state, updated live. Watched by the router redirect
 /// (via the shared repository stream — see app_router.dart) and by widgets
@@ -22,17 +24,22 @@ final signInWithEmailUseCaseProvider = Provider<SignInWithEmailUseCase>((ref) {
   return SignInWithEmailUseCase(ref.watch(authRepositoryProvider));
 });
 
-final registerWithEmailUseCaseProvider = Provider<RegisterWithEmailUseCase>((ref) {
+final registerWithEmailUseCaseProvider = Provider<RegisterWithEmailUseCase>((
+  ref,
+) {
   return RegisterWithEmailUseCase(ref.watch(authRepositoryProvider));
 });
 
-final signInWithGoogleUseCaseProvider = Provider<SignInWithGoogleUseCase>((ref) {
+final signInWithGoogleUseCaseProvider = Provider<SignInWithGoogleUseCase>((
+  ref,
+) {
   return SignInWithGoogleUseCase(ref.watch(authRepositoryProvider));
 });
 
-final sendPasswordResetEmailUseCaseProvider = Provider<SendPasswordResetEmailUseCase>((ref) {
-  return SendPasswordResetEmailUseCase(ref.watch(authRepositoryProvider));
-});
+final sendPasswordResetEmailUseCaseProvider =
+    Provider<SendPasswordResetEmailUseCase>((ref) {
+      return SendPasswordResetEmailUseCase(ref.watch(authRepositoryProvider));
+    });
 
 final signOutUseCaseProvider = Provider<SignOutUseCase>((ref) {
   return SignOutUseCase(ref.watch(authRepositoryProvider));

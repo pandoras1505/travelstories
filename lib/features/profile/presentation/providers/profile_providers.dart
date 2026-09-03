@@ -14,8 +14,12 @@ import '../../domain/usecases/upload_avatar_usecase.dart';
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepositoryImpl(
-    firestoreDataSource: ProfileFirestoreDataSource(firestore: FirebaseFirestore.instance),
-    storageDataSource: AvatarStorageDataSource(storage: FirebaseStorage.instance),
+    firestoreDataSource: ProfileFirestoreDataSource(
+      firestore: FirebaseFirestore.instance,
+    ),
+    storageDataSource: AvatarStorageDataSource(
+      storage: FirebaseStorage.instance,
+    ),
   );
 });
 
@@ -27,11 +31,15 @@ final currentUserProfileProvider = StreamProvider<UserProfile?>((ref) {
   return ref.watch(profileRepositoryProvider).watchProfile(authUser.uid);
 });
 
-final ensureUserProfileUseCaseProvider = Provider<EnsureUserProfileUseCase>((ref) {
+final ensureUserProfileUseCaseProvider = Provider<EnsureUserProfileUseCase>((
+  ref,
+) {
   return EnsureUserProfileUseCase(ref.watch(profileRepositoryProvider));
 });
 
-final updateDisplayNameUseCaseProvider = Provider<UpdateDisplayNameUseCase>((ref) {
+final updateDisplayNameUseCaseProvider = Provider<UpdateDisplayNameUseCase>((
+  ref,
+) {
   return UpdateDisplayNameUseCase(ref.watch(profileRepositoryProvider));
 });
 

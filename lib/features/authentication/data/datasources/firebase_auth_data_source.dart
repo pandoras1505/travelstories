@@ -5,9 +5,11 @@ import 'package:google_sign_in/google_sign_in.dart';
 /// SDK exception propagate untouched — mapping to [AuthException] happens
 /// one layer up, in [AuthRepositoryImpl].
 class FirebaseAuthDataSource {
-  FirebaseAuthDataSource({required fb_auth.FirebaseAuth firebaseAuth, required GoogleSignIn googleSignIn})
-    : _firebaseAuth = firebaseAuth,
-      _googleSignIn = googleSignIn;
+  FirebaseAuthDataSource({
+    required fb_auth.FirebaseAuth firebaseAuth,
+    required GoogleSignIn googleSignIn,
+  }) : _firebaseAuth = firebaseAuth,
+       _googleSignIn = googleSignIn;
 
   final fb_auth.FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
@@ -22,7 +24,10 @@ class FirebaseAuthDataSource {
     required String email,
     required String password,
   }) {
-    return _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
+    return _firebaseAuth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
   }
 
   Future<fb_auth.UserCredential> registerWithEmailAndPassword({

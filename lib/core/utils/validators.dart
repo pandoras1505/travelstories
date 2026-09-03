@@ -11,6 +11,9 @@ enum ValidationError {
   passwordTooShort,
   displayNameRequired,
   passwordsDoNotMatch,
+  titleRequired,
+  titleTooLong,
+  endDateBeforeStartDate,
 }
 
 class Validators {
@@ -30,7 +33,9 @@ class Validators {
   static ValidationError? password(String? value) {
     final trimmed = value ?? '';
     if (trimmed.isEmpty) return ValidationError.passwordRequired;
-    if (trimmed.length < minPasswordLength) return ValidationError.passwordTooShort;
+    if (trimmed.length < minPasswordLength) {
+      return ValidationError.passwordTooShort;
+    }
     return null;
   }
 
@@ -40,8 +45,27 @@ class Validators {
     return null;
   }
 
-  static ValidationError? confirmPassword(String? password, String? confirmation) {
+  static ValidationError? confirmPassword(
+    String? password,
+    String? confirmation,
+  ) {
     if (password != confirmation) return ValidationError.passwordsDoNotMatch;
+    return null;
+  }
+
+  static const int maxTitleLength = 120;
+
+  static ValidationError? title(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return ValidationError.titleRequired;
+    if (trimmed.length > maxTitleLength) return ValidationError.titleTooLong;
+    return null;
+  }
+
+  static ValidationError? dateRange(DateTime? start, DateTime? end) {
+    if (start != null && end != null && end.isBefore(start)) {
+      return ValidationError.endDateBeforeStartDate;
+    }
     return null;
   }
 }

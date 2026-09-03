@@ -14,6 +14,7 @@ class ForgotPasswordController extends AsyncNotifier<void> {
   }
 }
 
-final forgotPasswordControllerProvider = AsyncNotifierProvider<ForgotPasswordController, void>(
-  ForgotPasswordController.new,
-);
+final forgotPasswordControllerProvider =
+    AsyncNotifierProvider<ForgotPasswordController, void>(
+      ForgotPasswordController.new,
+    );

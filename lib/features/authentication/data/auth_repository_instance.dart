@@ -11,5 +11,8 @@ import 'repositories/auth_repository_impl.dart';
 /// cannot read a Riverpod provider — both consumers must share the same
 /// instance rather than each wrapping its own [FirebaseAuth.instance].
 final AuthRepository authRepository = AuthRepositoryImpl(
-  dataSource: FirebaseAuthDataSource(firebaseAuth: FirebaseAuth.instance, googleSignIn: GoogleSignIn.instance),
+  dataSource: FirebaseAuthDataSource(
+    firebaseAuth: FirebaseAuth.instance,
+    googleSignIn: GoogleSignIn.instance,
+  ),
 );

@@ -10,7 +10,10 @@ class FakeProfileRepository implements ProfileRepository {
   final _controllers = <String, StreamController<UserProfile?>>{};
 
   StreamController<UserProfile?> _controllerFor(String uid) {
-    return _controllers.putIfAbsent(uid, () => StreamController<UserProfile?>.broadcast());
+    return _controllers.putIfAbsent(
+      uid,
+      () => StreamController<UserProfile?>.broadcast(),
+    );
   }
 
   @override
@@ -44,20 +47,33 @@ class FakeProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<void> updateDisplayName({required String uid, required String displayName}) async {
+  Future<void> updateDisplayName({
+    required String uid,
+    required String displayName,
+  }) async {
     final existing = _profiles[uid];
     if (existing == null) return;
-    final updated = existing.copyWith(displayName: displayName, updatedAt: DateTime.now());
+    final updated = existing.copyWith(
+      displayName: displayName,
+      updatedAt: DateTime.now(),
+    );
     _profiles[uid] = updated;
     _controllerFor(uid).add(updated);
   }
 
   @override
-  Future<String> uploadAvatar({required String uid, required List<int> fileBytes, required String fileExtension}) async {
+  Future<String> uploadAvatar({
+    required String uid,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
     const url = 'https://example.com/fake-avatar.jpg';
     final existing = _profiles[uid];
     if (existing != null) {
-      final updated = existing.copyWith(photoUrl: url, updatedAt: DateTime.now());
+      final updated = existing.copyWith(
+        photoUrl: url,
+        updatedAt: DateTime.now(),
+      );
       _profiles[uid] = updated;
       _controllerFor(uid).add(updated);
     }

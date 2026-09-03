@@ -16,7 +16,12 @@ void main() {
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(
-            FakeAuthRepository(initialUser: const AuthUser(uid: 'u1', email: 'traveler@example.com')),
+            FakeAuthRepository(
+              initialUser: const AuthUser(
+                uid: 'u1',
+                email: 'traveler@example.com',
+              ),
+            ),
           ),
           profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
         ],

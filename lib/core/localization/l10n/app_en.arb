@@ -38,6 +38,9 @@
   "validationPasswordTooShort": "8 characters minimum",
   "validationDisplayNameRequired": "Display name is required",
   "validationPasswordsDoNotMatch": "Passwords do not match",
+  "validationTitleRequired": "Title is required",
+  "validationTitleTooLong": "120 characters maximum",
+  "validationEndDateBeforeStartDate": "End date must be after the start date",
 
   "authErrorInvalidEmail": "Invalid email address.",
   "authErrorInvalidCredential": "Incorrect email or password.",
@@ -60,5 +63,29 @@
 
   "storageErrorUnavailable": "Storage isn't available on this project yet. Try again later.",
   "storageErrorUnauthorized": "You don't have permission to do this.",
-  "storageErrorUnknown": "Upload failed. Please try again."
+  "storageErrorUnknown": "Upload failed. Please try again.",
+
+  "travelBookTitleLabel": "Travel book title",
+  "travelBookDescriptionLabel": "Description",
+  "travelBookStartDateLabel": "Start date",
+  "travelBookEndDateLabel": "End date",
+  "travelBookPublicToggle": "Publish publicly",
+  "travelBookPublicToggleSubtitle": "Visible to everyone once published. Leave off to keep this book as a draft.",
+  "travelBookSaveDraft": "Save draft",
+  "travelBookPublish": "Publish",
+  "travelBookUnpublish": "Back to draft",
+  "travelBookSaveChanges": "Save changes",
+  "travelBookChangeCover": "Change cover",
+  "travelBookDelete": "Delete travel book",
+  "travelBookDeleteConfirmTitle": "Delete this travel book?",
+  "travelBookDeleteConfirmMessage": "This action cannot be undone.",
+  "travelBookDraftBadge": "Draft",
+  "travelBookPublicBadge": "Public",
+  "travelBookEmptyTitle": "No travel books yet",
+  "travelBookEmptyMessage": "Create your first travel book to start telling your stories.",
+  "travelBookNewTitle": "New travel book",
+  "travelBookEditTitle": "Edit travel book",
+  "travelBookNoExperiencesYet": "No experiences yet.",
+  "commonDelete": "Delete",
+  "commonSave": "Save"
 }

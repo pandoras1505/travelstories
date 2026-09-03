@@ -7,7 +7,8 @@ import '../../domain/repositories/auth_repository.dart';
 import '../datasources/firebase_auth_data_source.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl({required FirebaseAuthDataSource dataSource}) : _dataSource = dataSource;
+  AuthRepositoryImpl({required FirebaseAuthDataSource dataSource})
+    : _dataSource = dataSource;
 
   final FirebaseAuthDataSource _dataSource;
 
@@ -20,9 +21,15 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthUser? get currentUser => _toAuthUser(_dataSource.currentUser);
 
   @override
-  Future<AuthUser> signInWithEmailAndPassword({required String email, required String password}) async {
+  Future<AuthUser> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
     try {
-      final credential = await _dataSource.signInWithEmailAndPassword(email: email, password: password);
+      final credential = await _dataSource.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       return _requireAuthUser(credential.user);
     } on fb_auth.FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthException(e);
@@ -74,18 +81,30 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthUser _requireAuthUser(fb_auth.User? user) {
     final authUser = _toAuthUser(user);
     if (authUser == null) {
-      throw const AuthException('Authentication succeeded without a user.', code: 'missing-user');
+      throw const AuthException(
+        'Authentication succeeded without a user.',
+        code: 'missing-user',
+      );
     }
     return authUser;
   }
 
   AuthUser? _toAuthUser(fb_auth.User? user) {
     if (user == null) return null;
-    return AuthUser(uid: user.uid, email: user.email, displayName: user.displayName, photoUrl: user.photoURL);
+    return AuthUser(
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoUrl: user.photoURL,
+    );
   }
 
   AuthException _mapFirebaseAuthException(fb_auth.FirebaseAuthException e) {
-    return AuthException('Firebase Auth error: ${e.code}', code: e.code, cause: e);
+    return AuthException(
+      'Firebase Auth error: ${e.code}',
+      code: e.code,
+      cause: e,
+    );
   }
 
   AuthException _mapGoogleSignInException(GoogleSignInException e) {
@@ -93,6 +112,10 @@ class AuthRepositoryImpl implements AuthRepository {
       GoogleSignInExceptionCode.canceled => 'google-sign-in-cancelled',
       _ => 'google-sign-in-failed',
     };
-    return AuthException('Google sign-in error: ${e.code}', code: code, cause: e);
+    return AuthException(
+      'Google sign-in error: ${e.code}',
+      code: code,
+      cause: e,
+    );
   }
 }

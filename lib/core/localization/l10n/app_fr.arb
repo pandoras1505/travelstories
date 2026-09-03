@@ -40,6 +40,9 @@
   "validationPasswordTooShort": "8 caractères minimum",
   "validationDisplayNameRequired": "Le nom affiché est requis",
   "validationPasswordsDoNotMatch": "Les mots de passe ne correspondent pas",
+  "validationTitleRequired": "Le titre est requis",
+  "validationTitleTooLong": "120 caractères maximum",
+  "validationEndDateBeforeStartDate": "La date de fin doit être après la date de début",
 
   "authErrorInvalidEmail": "Adresse e-mail invalide.",
   "authErrorInvalidCredential": "E-mail ou mot de passe incorrect.",
@@ -62,5 +65,29 @@
 
   "storageErrorUnavailable": "Le stockage n'est pas encore disponible sur ce projet. Réessaie plus tard.",
   "storageErrorUnauthorized": "Tu n'as pas la permission d'effectuer cette action.",
-  "storageErrorUnknown": "Le téléversement a échoué. Réessaie."
+  "storageErrorUnknown": "Le téléversement a échoué. Réessaie.",
+
+  "travelBookTitleLabel": "Titre du carnet",
+  "travelBookDescriptionLabel": "Description",
+  "travelBookStartDateLabel": "Date de début",
+  "travelBookEndDateLabel": "Date de fin",
+  "travelBookPublicToggle": "Publier publiquement",
+  "travelBookPublicToggleSubtitle": "Visible par tout le monde une fois publié. Laisse désactivé pour garder ce carnet en brouillon.",
+  "travelBookSaveDraft": "Enregistrer le brouillon",
+  "travelBookPublish": "Publier",
+  "travelBookUnpublish": "Repasser en brouillon",
+  "travelBookSaveChanges": "Enregistrer les modifications",
+  "travelBookChangeCover": "Changer la couverture",
+  "travelBookDelete": "Supprimer le carnet",
+  "travelBookDeleteConfirmTitle": "Supprimer ce carnet ?",
+  "travelBookDeleteConfirmMessage": "Cette action est irréversible.",
+  "travelBookDraftBadge": "Brouillon",
+  "travelBookPublicBadge": "Public",
+  "travelBookEmptyTitle": "Aucun carnet pour l'instant",
+  "travelBookEmptyMessage": "Crée ton premier carnet de voyage pour commencer à raconter tes histoires.",
+  "travelBookNewTitle": "Nouveau carnet",
+  "travelBookEditTitle": "Modifier le carnet",
+  "travelBookNoExperiencesYet": "Aucune expérience pour l'instant.",
+  "commonDelete": "Supprimer",
+  "commonSave": "Enregistrer"
 }

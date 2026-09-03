@@ -16,9 +16,16 @@ abstract class ProfileRepository {
     String? photoUrl,
   });
 
-  Future<void> updateDisplayName({required String uid, required String displayName});
+  Future<void> updateDisplayName({
+    required String uid,
+    required String displayName,
+  });
 
   /// Uploads [fileBytes] to `users/{uid}/profile/` and updates the
   /// profile's `photoUrl` to the resulting download URL, returning it.
-  Future<String> uploadAvatar({required String uid, required List<int> fileBytes, required String fileExtension});
+  Future<String> uploadAvatar({
+    required String uid,
+    required List<int> fileBytes,
+    required String fileExtension,
+  });
 }

@@ -62,7 +62,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<void> updateDisplayName({required String uid, required String displayName}) async {
+  Future<void> updateDisplayName({
+    required String uid,
+    required String displayName,
+  }) async {
     try {
       await _firestoreDataSource.update(uid, {
         'displayName': displayName,
@@ -90,7 +93,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
         fileExtension: fileExtension,
       );
     } on fs.FirebaseException catch (e) {
-      throw StorageException('Storage error: ${e.code}', code: e.code, cause: e);
+      throw StorageException(
+        'Storage error: ${e.code}',
+        code: e.code,
+        cause: e,
+      );
     }
 
     try {
@@ -120,6 +127,10 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   FirestoreException _mapFirestoreException(fs.FirebaseException e) {
-    return FirestoreException('Firestore error: ${e.code}', code: e.code, cause: e);
+    return FirestoreException(
+      'Firestore error: ${e.code}',
+      code: e.code,
+      cause: e,
+    );
   }
 }

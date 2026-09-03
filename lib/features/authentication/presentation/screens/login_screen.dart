@@ -37,7 +37,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     ref
         .read(loginControllerProvider.notifier)
-        .signInWithEmail(email: _emailController.text.trim(), password: _passwordController.text);
+        .signInWithEmail(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
   }
 
   @override
@@ -52,7 +55,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (error is AuthException) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(authErrorMessage(context, error))));
+          ..showSnackBar(
+            SnackBar(content: Text(authErrorMessage(context, error))),
+          );
       }
     });
 
@@ -76,15 +81,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
                     decoration: InputDecoration(labelText: l10n.authEmailLabel),
-                    validator: (value) => validationErrorMessage(context, Validators.email(value)),
+                    validator: (value) => validationErrorMessage(
+                      context,
+                      Validators.email(value),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
-                    decoration: InputDecoration(labelText: l10n.authPasswordLabel),
-                    validator: (value) => validationErrorMessage(context, Validators.password(value)),
+                    decoration: InputDecoration(
+                      labelText: l10n.authPasswordLabel,
+                    ),
+                    validator: (value) => validationErrorMessage(
+                      context,
+                      Validators.password(value),
+                    ),
                     onFieldSubmitted: (_) => _submit(),
                   ),
                   Align(
@@ -110,8 +123,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       const Expanded(child: Divider()),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                        child: Text(l10n.commonOr, style: theme.textTheme.bodySmall),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                        ),
+                        child: Text(
+                          l10n.commonOr,
+                          style: theme.textTheme.bodySmall,
+                        ),
                       ),
                       const Expanded(child: Divider()),
                     ],
@@ -120,7 +138,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   OutlinedButton.icon(
                     onPressed: isLoading
                         ? null
-                        : () => ref.read(loginControllerProvider.notifier).signInWithGoogle(),
+                        : () => ref
+                              .read(loginControllerProvider.notifier)
+                              .signInWithGoogle(),
                     icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
                     label: Text(l10n.authSignInWithGoogle),
                   ),
@@ -128,7 +148,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(l10n.authNoAccount, style: theme.textTheme.bodyMedium),
+                      Text(
+                        l10n.authNoAccount,
+                        style: theme.textTheme.bodyMedium,
+                      ),
                       TextButton(
                         onPressed: () => context.push(RoutePaths.register),
                         child: Text(l10n.authRegister),

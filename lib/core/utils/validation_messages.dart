@@ -16,5 +16,9 @@ String? validationErrorMessage(BuildContext context, ValidationError? error) {
     ValidationError.passwordTooShort => l10n.validationPasswordTooShort,
     ValidationError.displayNameRequired => l10n.validationDisplayNameRequired,
     ValidationError.passwordsDoNotMatch => l10n.validationPasswordsDoNotMatch,
+    ValidationError.titleRequired => l10n.validationTitleRequired,
+    ValidationError.titleTooLong => l10n.validationTitleTooLong,
+    ValidationError.endDateBeforeStartDate =>
+      l10n.validationEndDateBeforeStartDate,
   };
 }

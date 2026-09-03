@@ -6,11 +6,16 @@ import 'package:firebase_storage/firebase_storage.dart';
 /// exceptions propagate untouched — mapping to [StorageException] happens
 /// one layer up, in [ProfileRepositoryImpl].
 class AvatarStorageDataSource {
-  AvatarStorageDataSource({required FirebaseStorage storage}) : _storage = storage;
+  AvatarStorageDataSource({required FirebaseStorage storage})
+    : _storage = storage;
 
   final FirebaseStorage _storage;
 
-  Future<String> upload({required String uid, required List<int> fileBytes, required String fileExtension}) async {
+  Future<String> upload({
+    required String uid,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
     final ref = _storage.ref('users/$uid/profile/avatar.$fileExtension');
     await ref.putData(Uint8List.fromList(fileBytes));
     return ref.getDownloadURL();

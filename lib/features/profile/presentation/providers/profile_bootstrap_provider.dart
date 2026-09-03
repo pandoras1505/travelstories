@@ -19,6 +19,11 @@ final profileBootstrapProvider = Provider<void>((ref) {
     if (user == null) return;
     ref
         .read(ensureUserProfileUseCaseProvider)
-        .call(uid: user.uid, displayName: user.displayName ?? '', email: user.email ?? '', photoUrl: user.photoUrl);
+        .call(
+          uid: user.uid,
+          displayName: user.displayName ?? '',
+          email: user.email ?? '',
+          photoUrl: user.photoUrl,
+        );
   }, fireImmediately: true);
 });

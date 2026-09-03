@@ -54,7 +54,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (error is AuthException) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(authErrorMessage(context, error))));
+          ..showSnackBar(
+            SnackBar(content: Text(authErrorMessage(context, error))),
+          );
       }
     });
 
@@ -72,8 +74,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _displayNameController,
                   autofillHints: const [AutofillHints.name],
-                  decoration: InputDecoration(labelText: l10n.authDisplayNameLabel),
-                  validator: (value) => validationErrorMessage(context, Validators.displayName(value)),
+                  decoration: InputDecoration(
+                    labelText: l10n.authDisplayNameLabel,
+                  ),
+                  validator: (value) => validationErrorMessage(
+                    context,
+                    Validators.displayName(value),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
@@ -81,21 +88,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   keyboardType: TextInputType.emailAddress,
                   autofillHints: const [AutofillHints.email],
                   decoration: InputDecoration(labelText: l10n.authEmailLabel),
-                  validator: (value) => validationErrorMessage(context, Validators.email(value)),
+                  validator: (value) =>
+                      validationErrorMessage(context, Validators.email(value)),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
                   autofillHints: const [AutofillHints.newPassword],
-                  decoration: InputDecoration(labelText: l10n.authPasswordLabel),
-                  validator: (value) => validationErrorMessage(context, Validators.password(value)),
+                  decoration: InputDecoration(
+                    labelText: l10n.authPasswordLabel,
+                  ),
+                  validator: (value) => validationErrorMessage(
+                    context,
+                    Validators.password(value),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: true,
-                  decoration: InputDecoration(labelText: l10n.authConfirmPasswordLabel),
+                  decoration: InputDecoration(
+                    labelText: l10n.authConfirmPasswordLabel,
+                  ),
                   validator: (value) => validationErrorMessage(
                     context,
                     Validators.confirmPassword(_passwordController.text, value),
@@ -106,7 +121,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 FilledButton(
                   onPressed: isLoading ? null : _submit,
                   child: isLoading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : Text(l10n.authRegisterButton),
                 ),
               ],

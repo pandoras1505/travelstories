@@ -12,11 +12,16 @@ class EditProfileController extends AsyncNotifier<void> {
     if (uid == null) return;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() {
-      return ref.read(updateDisplayNameUseCaseProvider).call(uid: uid, displayName: displayName);
+      return ref
+          .read(updateDisplayNameUseCaseProvider)
+          .call(uid: uid, displayName: displayName);
     });
   }
 
-  Future<void> uploadAvatar({required List<int> fileBytes, required String fileExtension}) async {
+  Future<void> uploadAvatar({
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
     final uid = ref.read(authRepositoryProvider).currentUser?.uid;
     if (uid == null) return;
     state = const AsyncLoading();
@@ -28,6 +33,7 @@ class EditProfileController extends AsyncNotifier<void> {
   }
 }
 
-final editProfileControllerProvider = AsyncNotifierProvider<EditProfileController, void>(
-  EditProfileController.new,
-);
+final editProfileControllerProvider =
+    AsyncNotifierProvider<EditProfileController, void>(
+      EditProfileController.new,
+    );

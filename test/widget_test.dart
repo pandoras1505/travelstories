@@ -12,30 +12,42 @@ import 'fakes/fake_auth_repository.dart';
 import 'fakes/fake_profile_repository.dart';
 
 void main() {
-  testWidgets('signed out: boots on the splash screen then redirects to login', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(FakeAuthRepository())],
-        child: const TravelStoriesApp(),
-      ),
-    );
+  testWidgets(
+    'signed out: boots on the splash screen then redirects to login',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+          ],
+          child: const TravelStoriesApp(),
+        ),
+      );
 
-    expect(find.byType(SplashScreen), findsOneWidget);
-    expect(find.byType(LoginScreen), findsNothing);
+      expect(find.byType(SplashScreen), findsOneWidget);
+      expect(find.byType(LoginScreen), findsNothing);
 
-    await tester.pump(const Duration(milliseconds: 900));
-    await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 900));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(SplashScreen), findsNothing);
-    expect(find.byType(LoginScreen), findsOneWidget);
-  });
+      expect(find.byType(SplashScreen), findsNothing);
+      expect(find.byType(LoginScreen), findsOneWidget);
+    },
+  );
 
-  testWidgets('signed in: boots straight into the shell with all five tabs', (tester) async {
+  testWidgets('signed in: boots straight into the shell with all five tabs', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(
-            FakeAuthRepository(initialUser: const AuthUser(uid: 'u1', email: 'traveler@example.com')),
+            FakeAuthRepository(
+              initialUser: const AuthUser(
+                uid: 'u1',
+                email: 'traveler@example.com',
+              ),
+            ),
           ),
           profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
         ],

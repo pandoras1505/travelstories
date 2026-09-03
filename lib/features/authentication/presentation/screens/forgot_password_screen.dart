@@ -13,7 +13,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -29,7 +30,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    ref.read(forgotPasswordControllerProvider.notifier).sendResetLink(email: _emailController.text.trim());
+    ref
+        .read(forgotPasswordControllerProvider.notifier)
+        .sendResetLink(email: _emailController.text.trim());
   }
 
   @override
@@ -43,7 +46,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (error is AuthException) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(authErrorMessage(context, error))));
+          ..showSnackBar(
+            SnackBar(content: Text(authErrorMessage(context, error))),
+          );
       } else if (previous is AsyncLoading && next is AsyncData) {
         setState(() => _sent = true);
       }
@@ -55,7 +60,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: _sent
-              ? Text(l10n.authResetEmailSent, style: Theme.of(context).textTheme.bodyLarge)
+              ? Text(
+                  l10n.authResetEmailSent,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                )
               : Form(
                   key: _formKey,
                   child: Column(
@@ -66,8 +74,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         autofillHints: const [AutofillHints.email],
-                        decoration: InputDecoration(labelText: l10n.authEmailLabel),
-                        validator: (value) => validationErrorMessage(context, Validators.email(value)),
+                        decoration: InputDecoration(
+                          labelText: l10n.authEmailLabel,
+                        ),
+                        validator: (value) => validationErrorMessage(
+                          context,
+                          Validators.email(value),
+                        ),
                         onFieldSubmitted: (_) => _submit(),
                       ),
                       const SizedBox(height: AppSpacing.xl),
@@ -77,7 +90,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Text(l10n.authSendResetLink),
                       ),

@@ -10,7 +10,9 @@ String authErrorMessage(BuildContext context, AuthException exception) {
   final l10n = AppLocalizations.of(context)!;
   return switch (exception.code) {
     'invalid-email' => l10n.authErrorInvalidEmail,
-    'invalid-credential' || 'wrong-password' || 'user-not-found' => l10n.authErrorInvalidCredential,
+    'invalid-credential' ||
+    'wrong-password' ||
+    'user-not-found' => l10n.authErrorInvalidCredential,
     'user-disabled' => l10n.authErrorUserDisabled,
     'email-already-in-use' => l10n.authErrorEmailInUse,
     'weak-password' => l10n.authErrorWeakPassword,

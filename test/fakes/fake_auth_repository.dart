@@ -26,7 +26,10 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<AuthUser> signInWithEmailAndPassword({required String email, required String password}) async {
+  Future<AuthUser> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
     final user = AuthUser(uid: 'fake-uid', email: email);
     setUser(user);
     return user;
@@ -38,7 +41,11 @@ class FakeAuthRepository implements AuthRepository {
     required String password,
     required String displayName,
   }) async {
-    final user = AuthUser(uid: 'fake-uid', email: email, displayName: displayName);
+    final user = AuthUser(
+      uid: 'fake-uid',
+      email: email,
+      displayName: displayName,
+    );
     setUser(user);
     return user;
   }

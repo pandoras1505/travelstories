@@ -25,7 +25,10 @@ class ProfileScreen extends ConsumerWidget {
         error: (error, stackTrace) => ErrorView(message: l10n.commonError),
         data: (profile) {
           if (profile == null) {
-            return EmptyStateView(icon: Icons.person_outline, title: l10n.navProfile);
+            return EmptyStateView(
+              icon: Icons.person_outline,
+              title: l10n.navProfile,
+            );
           }
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -38,7 +41,9 @@ class ProfileScreen extends ConsumerWidget {
                       : null,
                   child: profile.photoUrl == null
                       ? Text(
-                          profile.displayName.isNotEmpty ? profile.displayName[0].toUpperCase() : '?',
+                          profile.displayName.isNotEmpty
+                              ? profile.displayName[0].toUpperCase()
+                              : '?',
                           style: Theme.of(context).textTheme.headlineMedium,
                         )
                       : null,
@@ -54,9 +59,9 @@ class ProfileScreen extends ConsumerWidget {
               Text(
                 profile.email,
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               FilledButton(

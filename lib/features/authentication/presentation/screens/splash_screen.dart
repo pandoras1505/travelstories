@@ -51,13 +51,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               children: [
                 Text(
                   l10n.appName,
-                  style: theme.textTheme.displaySmall?.copyWith(color: scheme.onPrimary),
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    color: scheme.onPrimary,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   l10n.appTagline,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(color: scheme.onPrimary.withValues(alpha: 0.9)),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: scheme.onPrimary.withValues(alpha: 0.9),
+                  ),
                 ),
               ],
             ),

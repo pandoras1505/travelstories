@@ -10,10 +10,15 @@ class LoginController extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  Future<void> signInWithEmail({required String email, required String password}) async {
+  Future<void> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      await ref.read(signInWithEmailUseCaseProvider).call(email: email, password: password);
+      await ref
+          .read(signInWithEmailUseCaseProvider)
+          .call(email: email, password: password);
     });
   }
 
@@ -32,4 +37,6 @@ class LoginController extends AsyncNotifier<void> {
   }
 }
 
-final loginControllerProvider = AsyncNotifierProvider<LoginController, void>(LoginController.new);
+final loginControllerProvider = AsyncNotifierProvider<LoginController, void>(
+  LoginController.new,
+);
