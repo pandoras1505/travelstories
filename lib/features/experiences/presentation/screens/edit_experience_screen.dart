@@ -8,6 +8,8 @@ import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/state_views.dart';
+import '../../../location/domain/entities/geo_position.dart';
+import '../../../location/presentation/location_picking_mixin.dart';
 import '../../domain/entities/experience.dart';
 import '../controllers/edit_experience_controller.dart';
 import '../media_error_messages.dart';
@@ -29,12 +31,16 @@ class EditExperienceScreen extends ConsumerStatefulWidget {
       _EditExperienceScreenState();
 }
 
-class _EditExperienceScreenState extends ConsumerState<EditExperienceScreen> {
+class _EditExperienceScreenState extends ConsumerState<EditExperienceScreen>
+    with LocationPickingMixin<EditExperienceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
   bool _initialized = false;
+
+  @override
+  TextEditingController get locationController => _locationController;
 
   @override
   void dispose() {
@@ -56,6 +62,8 @@ class _EditExperienceScreenState extends ConsumerState<EditExperienceScreen> {
           locationName: _locationController.text.trim().isEmpty
               ? null
               : _locationController.text.trim(),
+          latitude: position?.latitude,
+          longitude: position?.longitude,
         );
   }
 
@@ -189,6 +197,12 @@ class _EditExperienceScreenState extends ConsumerState<EditExperienceScreen> {
             _titleController.text = experience.title;
             _descriptionController.text = experience.description;
             _locationController.text = experience.locationName ?? '';
+            if (experience.latitude != null && experience.longitude != null) {
+              position = GeoPosition(
+                latitude: experience.latitude!,
+                longitude: experience.longitude!,
+              );
+            }
             _initialized = true;
           }
           return SafeArea(
@@ -215,6 +229,10 @@ class _EditExperienceScreenState extends ConsumerState<EditExperienceScreen> {
                       titleController: _titleController,
                       descriptionController: _descriptionController,
                       locationController: _locationController,
+                      currentPosition: position,
+                      isLocating: isLocating,
+                      onUseCurrentLocation: useCurrentLocation,
+                      onPickOnMap: pickOnMap,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     FilledButton(

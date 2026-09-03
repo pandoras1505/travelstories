@@ -4,22 +4,33 @@ import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/validation_messages.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../location/domain/entities/geo_position.dart';
+import '../../../location/presentation/widgets/experience_map_preview.dart';
 
-/// Title + description + location-name fields shared by the create and
-/// edit experience screens. `locationName` is a plain text field for now —
-/// "use current location" / "pick on map" (which would also populate
-/// latitude/longitude) ship in the Geolocation phase.
+/// Title + description + location fields shared by the create and edit
+/// experience screens. The location name is a free-text field the user can
+/// also fill by tapping "use my location" (reverse-geocoded) or "pick on
+/// map" — both of which also set [currentPosition], shown as a small map
+/// preview when present.
 class ExperienceFormFields extends StatelessWidget {
   const ExperienceFormFields({
     super.key,
     required this.titleController,
     required this.descriptionController,
     required this.locationController,
+    required this.currentPosition,
+    required this.isLocating,
+    required this.onUseCurrentLocation,
+    required this.onPickOnMap,
   });
 
   final TextEditingController titleController;
   final TextEditingController descriptionController;
   final TextEditingController locationController;
+  final GeoPosition? currentPosition;
+  final bool isLocating;
+  final VoidCallback onUseCurrentLocation;
+  final VoidCallback onPickOnMap;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +63,42 @@ class ExperienceFormFields extends StatelessWidget {
             prefixIcon: const Icon(Icons.place_outlined),
           ),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: isLocating ? null : onUseCurrentLocation,
+                icon: isLocating
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location, size: 18),
+                label: Text(
+                  l10n.experienceUseCurrentLocation,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onPickOnMap,
+                icon: const Icon(Icons.map_outlined, size: 18),
+                label: Text(
+                  l10n.experiencePickOnMap,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (currentPosition != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          ExperienceMapPreview(position: currentPosition!),
+        ],
       ],
     );
   }

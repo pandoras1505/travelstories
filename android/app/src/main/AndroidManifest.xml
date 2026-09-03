@@ -3,10 +3,20 @@
          access. The Flutter tool injects this automatically for debug builds
          only, so it must be declared explicitly here for release builds. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- geolocator does not merge these automatically — required for
+         "use my current location" when creating/editing an experience. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="TravelStories"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- TODO: replace with the real Maps SDK for Android API key once
+             created in Google Cloud Console (restricted to this app's
+             package name + SHA-1). Maps tiles won't render without it. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="REPLACE_WITH_GOOGLE_MAPS_API_KEY"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

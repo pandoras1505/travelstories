@@ -111,5 +111,16 @@
   "mediaErrorImageTooLarge": "Cette image dépasse 15 Mo.",
   "mediaErrorVideoTooLarge": "Cette vidéo dépasse 200 Mo.",
   "mediaErrorProcessingFailed": "Le traitement du média a échoué. Réessaie.",
-  "mediaErrorUnknown": "Une erreur est survenue avec ce média."
+  "mediaErrorUnknown": "Une erreur est survenue avec ce média.",
+
+  "experienceUseCurrentLocation": "Utiliser ma position",
+  "experiencePickOnMap": "Choisir sur la carte",
+  "locationPickerTitle": "Choisir un lieu",
+  "locationPickerConfirm": "Valider",
+
+  "locationErrorServiceDisabled": "La localisation est désactivée sur cet appareil.",
+  "locationErrorPermissionDenied": "Permission de localisation refusée.",
+  "locationErrorPermissionDeniedForever": "Permission de localisation refusée définitivement. Active-la dans les réglages.",
+  "locationErrorUnknown": "Impossible d'obtenir ta position.",
+  "commonOpenSettings": "Ouvrir les réglages"
 }

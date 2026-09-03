@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../location/presentation/location_picking_mixin.dart';
 import '../controllers/create_experience_controller.dart';
 import '../widgets/experience_form_fields.dart';
 
@@ -17,12 +18,15 @@ class CreateExperienceScreen extends ConsumerStatefulWidget {
       _CreateExperienceScreenState();
 }
 
-class _CreateExperienceScreenState
-    extends ConsumerState<CreateExperienceScreen> {
+class _CreateExperienceScreenState extends ConsumerState<CreateExperienceScreen>
+    with LocationPickingMixin<CreateExperienceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
+
+  @override
+  TextEditingController get locationController => _locationController;
 
   @override
   void dispose() {
@@ -44,6 +48,8 @@ class _CreateExperienceScreenState
           locationName: _locationController.text.trim().isEmpty
               ? null
               : _locationController.text.trim(),
+          latitude: position?.latitude,
+          longitude: position?.longitude,
         );
 
     if (newId != null && mounted) Navigator.of(context).pop();
@@ -78,6 +84,10 @@ class _CreateExperienceScreenState
                   titleController: _titleController,
                   descriptionController: _descriptionController,
                   locationController: _locationController,
+                  currentPosition: position,
+                  isLocating: isLocating,
+                  onUseCurrentLocation: useCurrentLocation,
+                  onPickOnMap: pickOnMap,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 FilledButton(

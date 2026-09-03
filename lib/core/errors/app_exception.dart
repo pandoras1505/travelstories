@@ -41,7 +41,9 @@ class DatabaseException extends AppException {
 }
 
 class LocationException extends AppException {
-  const LocationException(super.message, {super.cause});
+  const LocationException(super.message, {super.cause, this.code});
+
+  final String? code;
 }
 
 class MediaException extends AppException {

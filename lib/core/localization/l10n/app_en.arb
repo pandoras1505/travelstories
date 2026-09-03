@@ -109,5 +109,16 @@
   "mediaErrorImageTooLarge": "This image is over 15 MB.",
   "mediaErrorVideoTooLarge": "This video is over 200 MB.",
   "mediaErrorProcessingFailed": "Processing this media failed. Please try again.",
-  "mediaErrorUnknown": "Something went wrong with this media."
+  "mediaErrorUnknown": "Something went wrong with this media.",
+
+  "experienceUseCurrentLocation": "Use my location",
+  "experiencePickOnMap": "Pick on map",
+  "locationPickerTitle": "Pick a location",
+  "locationPickerConfirm": "Confirm",
+
+  "locationErrorServiceDisabled": "Location is turned off on this device.",
+  "locationErrorPermissionDenied": "Location permission denied.",
+  "locationErrorPermissionDeniedForever": "Location permission permanently denied. Enable it in Settings.",
+  "locationErrorUnknown": "Couldn't get your location.",
+  "commonOpenSettings": "Open settings"
 }
