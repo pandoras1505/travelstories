@@ -1,15 +1,15 @@
 name: CI
 
-# Runs on every push to master and every PR targeting it, plus manual runs
+# Runs on every push to main and every PR targeting it, plus manual runs
 # (Actions tab -> CI -> Run workflow). Pin the Flutter version to the one
 # this project develops against (see HANDOFF.md §1/§6) — riverpod's
 # hand-written providers and freezed's generated code have both been
 # validated against this exact SDK, not "whatever's latest".
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 env:
