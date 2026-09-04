@@ -1,0 +1,87 @@
+name: CI
+
+# Runs on every push to master and every PR targeting it, plus manual runs
+# (Actions tab -> CI -> Run workflow). Pin the Flutter version to the one
+# this project develops against (see HANDOFF.md §1/§6) — riverpod's
+# hand-written providers and freezed's generated code have both been
+# validated against this exact SDK, not "whatever's latest".
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.41.6"
+
+jobs:
+  analyze_and_test:
+    name: Analyze & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # *.freezed.dart is gitignored (regenerated locally on demand — see
+      # HANDOFF.md §6) so a fresh checkout has none of it yet, and most of
+      # the domain entities are @freezed classes. gen-l10n runs on its own
+      # via pubspec.yaml's `generate: true`; build_runner does not.
+      - name: Generate freezed code
+        run: dart run build_runner build
+
+      # Fails the build if anyone forgets to run `dart format .` — matches
+      # the "dart format ." step already in HANDOFF.md's local checklist.
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  build_android:
+    name: Build Android (debug)
+    needs: analyze_and_test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17" # matches android/app/build.gradle.kts
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Generate freezed code
+        run: dart run build_runner build
+
+      # A debug build needs no signing config, unlike --release — there's
+      # no release keystore set up yet (see HANDOFF.md §8). This job exists
+      # to catch "does the Android project actually compile" regressions;
+      # producing a signed, Play-Store-ready release build is a separate,
+      # later concern.
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
