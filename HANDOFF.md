@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-04. **Roadmap des 18 phases terminé** (Phase 18, voir §24 et `PRODUCTION_READINESS.md`), puis travail post-roadmap : Firebase Storage contourné par un stockage local des médias (§26), premier test réel sur appareil Android et correction d'un bug de synchronisation réel trouvé à cette occasion (§27).
+Dernière mise à jour : 2026-09-04. **Roadmap des 18 phases terminé** (Phase 18, voir §24 et `PRODUCTION_READINESS.md`), puis travail post-roadmap : Firebase Storage contourné par un stockage local des médias (§26), premier test réel sur appareil Android et correction d'un bug de synchronisation réel trouvé à cette occasion (§27), icône/splash/politique de confidentialité (§28).
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan — les 5 documents exigés par le brief (`README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `OFFLINE_SYNC.md`, `DEPLOYMENT.md`) existent à la racine du dépôt depuis la Phase 17 (voir §9/§23).
 
 ---
@@ -279,9 +279,9 @@ Rédigés directement à partir de la relecture du code source réel (règles Fi
 Dernière phase du plan initial. Revue globale, pas de nouvelle fonctionnalité. Un agent de recherche a vérifié des points jamais couverts par les 17 phases précédentes (icônes, nom affiché, écran de démarrage, usage réel d'`firebase_analytics`, textes de permission, hygiène `.gitignore`/secrets, logs de debug résiduels, cohérence du pattern `.when(loading/error/data)` sur tous les écrans, présence d'une licence) — synthétisé dans le nouveau **`PRODUCTION_READINESS.md`** à la racine du dépôt.
 
 Points nouveaux trouvés (aucun n'existait dans le suivi précédent) :
-- **Icônes et splash screen encore ceux par défaut de `flutter create`** — pas d'image de marque personnalisée. Bloquant pour une publication store, pas pour un usage personnel/bêta.
+- ~~Icônes et splash screen encore ceux par défaut de `flutter create`~~ — **résolu le 2026-09-04, voir §28**.
 - **`firebase_analytics` est une dépendance inutilisée** : présente dans `pubspec.yaml` mais aucun `FirebaseAnalytics`/`logEvent` nulle part dans `lib/`. Décision à prendre par l'utilisateur (retirer ou instrumenter), non tranchée ici.
-- **Aucune politique de confidentialité** dans le dépôt — obligatoire pour publier sur le Play Store/App Store dès que l'app collecte position/photos/identifiants (c'est le cas ici). Document légal, pas rédigé sans demande explicite de l'utilisateur.
+- ~~Aucune politique de confidentialité dans le dépôt~~ — **rédigée le 2026-09-04, voir §28** ; reste à la partager publiquement.
 - Points déjà bons, confirmés sans changement nécessaire : nom d'app correctement affiché (`"TravelStories"`, pas le nom de package), versioning cohérent (source unique dans `pubspec.yaml`), textes de permission iOS déjà réels et en français (pas des placeholders), aucun `print`/`debugPrint` résiduel, aucun secret suivi par git, pattern `.when()` appliqué systématiquement sur les écrans à données async.
 
 **Verdict** (détail dans `PRODUCTION_READINESS.md`) : prêt pour un usage personnel ou une bêta fermée sur appareil réel ; pas prêt pour une publication store publique, mais pour des raisons de décisions produit/actifs graphiques (branding, politique de confidentialité, keystore de release, activation de Storage), pas de qualité de code — rien dans les 17 phases précédentes ne bloque techniquement une sortie.
@@ -314,9 +314,19 @@ L'utilisateur a branché un appareil Android physique. Build Gradle **local touj
   - Tests : 4 nouveaux cas dans `test/core/offline/local_first_stream_test.dart` (swallow-puis-retry pour `localFirstStream` et `localFirstSingleStream`, et récupération après erreur pour les deux). `flutter analyze` → 0 issue, `flutter test` → **77/77** tests verts.
   - Voir `OFFLINE_SYNC.md` (section "Lecture : cache immédiat, puis flux distant") pour la documentation utilisateur de ce correctif.
 
-## 28. Prochaine étape
+## 28. Icône, splash screen et politique de confidentialité (2026-09-04)
 
-**Le roadmap des 18 phases est terminé**, et le bypass Storage (§26) est livré, vérifié en conditions réelles sur appareil (§27), et son seul bug réel trouvé pendant ces tests a été corrigé. Ce qui reste est de la dette explicitement documentée (§8) et nécessite des actions/décisions de l'utilisateur plutôt que du code : activer Firebase Storage (pour un vrai partage de médias entre utilisateurs/appareils), créer un keystore de release (+ son empreinte SHA-1), décider du sort d'`firebase_analytics`, fournir une image de marque (icône/splash), rédiger une politique de confidentialité, et restreindre les clés API Firebase dans Google Cloud Console (§8) avant toute publication sur un store. Voir `PRODUCTION_READINESS.md` pour le détail complet et la checklist finale.
+L'utilisateur a demandé d'activer les trois derniers points bloquants la publication store identifiés en Phase 18 (§24/`PRODUCTION_READINESS.md`).
+
+- **Icône** : pas de logo fourni par l'utilisateur — dessinée à partir de l'identité visuelle déjà existante de l'app (`lib/core/theme/app_colors.dart`) plutôt que d'inventer une charte graphique arbitraire. Motif : un pin de voyage (cercle + pointe, comme un repère de carte), en `AppColors.tealLight` (`#3F9A96`) sur `AppColors.neutral900` (`#1A1613`, le fond sombre déjà utilisé sur tous les écrans). Dessiné en Python/Pillow (cercle + triangle + trou circulaire — pas besoin de courbes de Bézier pour cette forme) faute de pouvoir faire rendre du SVG par le navigateur de cet environnement (`localhost`/`file://` bloqués ici, voir plus bas). Sources dans `assets/icon/` : `icon.png` (icône pleine), `icon_background.png`/`icon_foreground.png` (split pour les icônes adaptatives Android).
+- **Splash** : même fond + le pin en transparence, pour une identité cohérente au démarrage.
+- Génération via deux nouvelles dev-dependencies : `flutter_launcher_icons` (`dart run flutter_launcher_icons`) et `flutter_native_splash` (`dart run flutter_native_splash:create`), configurées dans `pubspec.yaml`. À relancer après toute modification des images sources. `flutter analyze` → 0 issue, `flutter test` → 77/77 (inchangé, ces outils ne touchent pas le code Dart).
+- **Politique de confidentialité** : rédigée en français, couvre les traitements réels de l'app (compte/Firebase, contenu des carnets, position optionnelle, diagnostics Crashlytics, et le stockage **local** des médias — §26/`OFFLINE_SYNC.md`, avec la précision que les médias d'un carnet publié ne sont donc pas visibles par les autres utilisateurs pour l'instant). Publiée en artefact — **reste privée tant que l'utilisateur ne la partage pas** depuis le menu de partage ; nécessaire pour que les stores puissent l'ouvrir sans compte à la validation.
+- **Contrainte d'environnement notée en passant** : impossible de faire naviguer le navigateur intégré vers `file://` ou `http://localhost:PORT` dans cet environnement (les deux sont refusés) — a empêché un rendu SVG classique pour l'icône ; contourné en dessinant directement les pixels avec Pillow plutôt qu'en cherchant un contournement de la restriction.
+
+## 29. Prochaine étape
+
+**Le roadmap des 18 phases est terminé**, le bypass Storage (§26) est livré et vérifié en conditions réelles sur appareil (§27, avec un bug de sync réel trouvé et corrigé), et les trois derniers freins à la publication store identifiés en Phase 18 sont traités (§28) — il ne reste que le partage effectif de la politique de confidentialité, une action utilisateur. Ce qui reste au-delà est de la dette explicitement documentée (§8) et nécessite d'autres décisions de l'utilisateur plutôt que du code : activer Firebase Storage (pour un vrai partage de médias entre utilisateurs/appareils), créer un keystore de release (+ son empreinte SHA-1), décider du sort d'`firebase_analytics`, et restreindre les clés API Firebase dans Google Cloud Console (§8) avant toute publication sur un store. Voir `PRODUCTION_READINESS.md` pour le détail complet et la checklist finale.
 
 ---
 

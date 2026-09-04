@@ -4,7 +4,7 @@ Bilan final du projet TravelStories (18 phases du roadmap initial), pour répond
 
 ## Verdict
 
-**Prêt pour un usage personnel ou une bêta fermée sur appareil réel.** **Pas prêt pour une publication publique sur les stores** — pas pour une raison de qualité de code, mais à cause de décisions externes encore en attente (carte bancaire pour Storage, keystore de release, image de marque). Détail ci-dessous.
+**Prêt pour un usage personnel ou une bêta fermée sur appareil réel — et vérifié comme tel** (voir §27 de `HANDOFF.md`). **Pas encore prêt pour une publication publique sur les stores** — pas pour une raison de qualité de code, mais à cause de décisions externes encore en attente (carte bancaire pour Storage, keystore de release, partage effectif de la politique de confidentialité). Détail ci-dessous.
 
 ## 1. Qualité du code
 
@@ -36,14 +36,20 @@ Ces points n'étaient pas dans le roadmap initial mais conditionnent une vraie s
 
 | Point | État | Action requise |
 |---|---|---|
-| **Icône de l'app** | Icône par défaut de `flutter create` (Android et iOS), pas d'image de marque personnalisée | Fournir une icône (ex. via `flutter_launcher_icons`) avant toute publication — nécessite un visuel que je ne peux pas inventer à ta place |
-| **Écran de démarrage (splash)** | Template par défaut (fond blanc, pas de logo) | Idem — personnalisation graphique à faire |
+| **Icône de l'app** | ✅ Icône personnalisée générée le 2026-09-04 (pin de voyage, couleurs de la marque — voir §4bis) | Rien à faire |
+| **Écran de démarrage (splash)** | ✅ Généré le 2026-09-04, même identité visuelle que l'icône | Rien à faire |
 | **Nom affiché sur l'appareil** | ✅ Déjà correct : `"TravelStories"` (`AndroidManifest.xml`, `Info.plist`), pas le nom de package brut |
 | **Versioning** | `pubspec.yaml` → `1.0.0+1`, source unique de vérité (Android ne surcharge pas `versionCode`/`versionName` séparément) | Rien à faire, déjà cohérent |
 | **`firebase_analytics`** | Dépendance présente dans `pubspec.yaml` mais **jamais utilisée** (aucun `FirebaseAnalytics`/`logEvent` dans `lib/`) | Décision à prendre : la retirer si elle n'est pas prévue, ou l'instrumenter si un suivi d'usage est souhaité — je n'ai rien changé sans te le demander |
-| **Politique de confidentialité** | Aucun fichier `PRIVACY`/`terms` dans le dépôt | **Obligatoire pour publier sur le Play Store et l'App Store** dès qu'une app collecte position, photos/vidéos ou identifiants (Google Sign-In, Crashlytics) — nécessite une page publique (URL) et le remplissage du formulaire "Sécurité des données" de chaque store. Document légal — je peux t'aider à en rédiger un brouillon si tu le demandes explicitement, mais je ne l'ai pas fait de ma propre initiative |
+| **Politique de confidentialité** | ✅ Rédigée et publiée le 2026-09-04 (voir §4bis) | **Il faut la partager** depuis le menu de partage de l'artefact pour qu'elle soit publiquement accessible — les stores doivent pouvoir l'ouvrir sans compte pour valider la fiche |
 | **Textes de permission (iOS)** | ✅ `Info.plist` contient déjà de vrais textes en français pour caméra/photothèque/micro/localisation (pas des placeholders) | Rien à faire |
 | **Licence** | Aucun fichier `LICENSE` | Sans objet pour une app privée non publiée sur pub.dev (`publish_to: 'none'`) — à ajouter seulement si le code doit un jour être rendu public/open source |
+
+### 4bis. Icône, splash et politique de confidentialité (2026-09-04)
+
+- **Icône** : un pin de voyage (cercle + pointe, comme un repère de carte) en teal (`AppColors.tealLight` `#3F9A96`) sur le fond sombre de l'app (`AppColors.neutral900` `#1A1613`) — cohérent avec l'identité visuelle existante plutôt qu'un logo arbitraire. Sources dans `assets/icon/` (`icon.png` plein, `icon_background.png`/`icon_foreground.png` pour les icônes adaptatives Android). Générée via `flutter_launcher_icons` (config dans `pubspec.yaml`) — régénérer avec `dart run flutter_launcher_icons` après modification des sources.
+- **Splash** : même fond sombre + le pin en transparence, via `flutter_native_splash` (config dans `pubspec.yaml`) — régénérer avec `dart run flutter_native_splash:create`.
+- **Politique de confidentialité** : rédigée en français, couvre les données réellement traitées par l'app (compte, contenu des carnets, position optionnelle, diagnostics Crashlytics, stockage local des médias — voir `OFFLINE_SYNC.md`), publiée en artefact. **Reste privée tant qu'elle n'est pas partagée** depuis le menu de partage de l'artefact — nécessaire pour que les stores puissent l'ouvrir sans compte lors de la validation de la fiche.
 
 ## 5. Dette et bloquants connus (rappel de `HANDOFF.md` §8)
 
@@ -51,7 +57,7 @@ Ces points n'étaient pas dans le roadmap initial mais conditionnent une vraie s
 |---|---|---|
 | Firebase Storage non activé | Nécessite le plan Blaze (carte bancaire) | **Décision confirmée** : reste désactivé — contourné par un stockage local des médias (voir [OFFLINE_SYNC.md](OFFLINE_SYNC.md#médias--stockage-local-en-attendant-storage)). L'upload fonctionne donc à nouveau pour un usage sur un seul appareil, mais un carnet publié ne montre ses médias qu'à son propriétaire sur cet appareil — **nouveau bloquant pour une publication store** tant que ça reste le cas, puisque le partage public de photos/vidéos ne fonctionnerait pas pour les autres utilisateurs |
 | Empreinte SHA-1 release manquante | Aucun keystore de release créé | En attente — voir [DEPLOYMENT.md](DEPLOYMENT.md) pour la procédure quand tu seras prêt |
-| Aucun build Android/iOS réel testé | Restriction réseau de la machine de développement (voir `HANDOFF.md` §4.1) | À tester sur un appareil physique ou une autre machine — la CI GitHub Actions a produit un APK debug qui s'est buildé avec succès, c'est la meilleure preuve indirecte obtenue à ce jour |
+| Build Android réel jamais testé | Restriction réseau de la machine de développement (voir `HANDOFF.md` §4.1) | **✅ Testé le 2026-09-04** — APK debug de la CI installé via `adb` sur un vrai téléphone Android, app fonctionnelle de bout en bout (voir `HANDOFF.md` §27). Un vrai bug de synchronisation a été trouvé et corrigé à cette occasion. iOS reste non testé (aucun appareil/Mac disponible) |
 | Carte OpenStreetMap vs Google Maps | Carte bancaire indisponible pour Google Maps Platform | **Décision confirmée définitive** : OpenStreetMap |
 
 ## 6. Checklist finale
@@ -62,12 +68,12 @@ Ces points n'étaient pas dans le roadmap initial mais conditionnent une vraie s
 - [x] Documentation : les 5 fichiers requis existent et sont à jour
 - [x] Gestion d'erreurs et rapport de crash en place
 - [x] Upload de médias fonctionnel (stockage local en attendant Storage — usage un seul appareil uniquement, voir ci-dessus)
-- [ ] Image de marque (icône, splash) personnalisée
-- [ ] Politique de confidentialité publiée (obligatoire pour les stores)
+- [x] Image de marque (icône, splash) personnalisée
+- [x] Build Android réel testé sur un appareil physique — voir `HANDOFF.md` §27
+- [ ] Politique de confidentialité **rédigée mais à partager publiquement** (menu de partage de l'artefact — voir §4)
 - [ ] Décision sur `firebase_analytics` (retirer ou instrumenter)
 - [ ] Storage activé (nécessaire pour que le partage public de médias fonctionne pour les autres utilisateurs, pas pour l'upload en lui-même)
 - [ ] Keystore de release + empreinte SHA-1 associée
-- [ ] Build réel testé sur un appareil physique
 - [ ] Clés API Firebase restreintes par app/API dans Google Cloud Console (voir [SECURITY.md](SECURITY.md#à-propos-des-alertes-github-google-api-key))
 
 ## Conclusion
