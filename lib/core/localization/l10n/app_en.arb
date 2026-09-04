@@ -61,6 +61,11 @@
   "profileSaved": "Profile updated.",
   "commonCancel": "Cancel",
 
+  "profileAppearance": "Appearance",
+  "profileAppearanceLight": "Light",
+  "profileAppearanceDark": "Dark",
+  "profileAppearanceSystem": "System",
+
   "storageErrorUnavailable": "Storage isn't available on this project yet. Try again later.",
   "storageErrorUnauthorized": "You don't have permission to do this.",
   "storageErrorUnknown": "Upload failed. Please try again.",

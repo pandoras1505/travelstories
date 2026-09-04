@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import '../../../../app/router/route_paths.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../../core/widgets/app_image.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
@@ -74,6 +77,8 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
+              const _AppearanceSection(),
+              const SizedBox(height: AppSpacing.xl),
               FilledButton(
                 onPressed: () => context.push(RoutePaths.editProfile),
                 child: Text(l10n.profileEditButton),
@@ -87,6 +92,60 @@ class ProfileScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Lets the user override the OS light/dark setting for this app
+/// specifically, persisted via [themeModeProvider]/[saveThemeMode].
+class _AppearanceSection extends ConsumerWidget {
+  const _AppearanceSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final mode = ref.watch(themeModeProvider).value ?? ThemeMode.system;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.profileAppearance,
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SegmentedButton<ThemeMode>(
+          segments: [
+            ButtonSegment(
+              value: ThemeMode.system,
+              icon: const Icon(Icons.brightness_auto_outlined),
+              label: Text(l10n.profileAppearanceSystem),
+            ),
+            ButtonSegment(
+              value: ThemeMode.light,
+              icon: const Icon(Icons.light_mode_outlined),
+              label: Text(l10n.profileAppearanceLight),
+            ),
+            ButtonSegment(
+              value: ThemeMode.dark,
+              icon: const Icon(Icons.dark_mode_outlined),
+              label: Text(l10n.profileAppearanceDark),
+            ),
+          ],
+          selected: {mode},
+          showSelectedIcon: false,
+          onSelectionChanged: (selection) {
+            unawaited(
+              ref
+                  .read(themeModeProvider.notifier)
+                  .setThemeMode(selection.first),
+            );
+          },
+        ),
+      ],
     );
   }
 }

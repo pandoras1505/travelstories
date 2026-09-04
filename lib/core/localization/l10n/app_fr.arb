@@ -63,6 +63,11 @@
   "profileSaved": "Profil mis à jour.",
   "commonCancel": "Annuler",
 
+  "profileAppearance": "Apparence",
+  "profileAppearanceLight": "Clair",
+  "profileAppearanceDark": "Sombre",
+  "profileAppearanceSystem": "Système",
+
   "storageErrorUnavailable": "Le stockage n'est pas encore disponible sur ce projet. Réessaie plus tard.",
   "storageErrorUnauthorized": "Tu n'as pas la permission d'effectuer cette action.",
   "storageErrorUnknown": "Le téléversement a échoué. Réessaie.",
