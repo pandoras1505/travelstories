@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-04, fin de la **Phase 17** (Documentation) — voir §23.
+Dernière mise à jour : 2026-09-04, fin de la **Phase 18** (Production Readiness Review) — **roadmap des 18 phases terminé**, voir §24 et `PRODUCTION_READINESS.md`.
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan — les 5 documents exigés par le brief (`README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `OFFLINE_SYNC.md`, `DEPLOYMENT.md`) existent à la racine du dépôt depuis la Phase 17 (voir §9/§23).
 
 ---
@@ -36,7 +36,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 15 | Performance | ✅ (voir §21 — revue de code, aucun profiling possible ici ; un vrai correctif appliqué : taille de cache mémoire des images) |
 | 16 | CI/CD | ✅ (voir §20 — CI vérifiée en conditions réelles sur GitHub Actions, les deux jobs passent) |
 | 17 | Documentation | ✅ (voir §23 — README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT écrits) |
-| 18 | Production Readiness Review | ⬜ |
+| 18 | Production Readiness Review | ✅ (voir §24 et `PRODUCTION_READINESS.md` — roadmap 18 phases terminé) |
 
 ## 3. Décisions d'architecture actées
 
@@ -139,7 +139,7 @@ Aucun test dédié pour : le rendu de carte (`flutter_map`, Phase 7) ni video_pl
 - [x] ~~Connecter un remote GitHub pour que la CI serve à quelque chose~~ — fait par l'utilisateur le 2026-09-04 (`origin` = `https://github.com/pandoras1505/travelstories.git`, branche `main`). Voir §20 pour le bug de déclencheur découvert et corrigé dans la foulée, et le résultat du premier run réel.
 - [x] ~~Phase 15 (Performance) volontairement sautée~~ — reprise et livrée le 2026-09-04 après la Phase 16. Voir §21.
 
-## 9. Dette de documentation (Phase 17, pas encore commencée)
+## 9. Documentation (Phase 17 — terminée)
 
 Le brief exige `README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `OFFLINE_SYNC.md`, `DEPLOYMENT.md` maintenus en continu. **Les 5 ont été écrits en Phase 17** (voir §23) — à maintenir à jour à chaque changement d'architecture, de règles de sécurité ou de pipeline de déploiement, indépendamment de ce fichier (`HANDOFF.md` reste un aide-mémoire de reprise de session, pas un livrable).
 
@@ -270,9 +270,23 @@ Rédigés directement à partir de la relecture du code source réel (règles Fi
 
 **À faire vivre en continu** (rappel du brief) : mettre à jour ces 5 fichiers à chaque changement d'architecture, de règles de sécurité ou de pipeline de déploiement — indépendamment de `HANDOFF.md`, qui reste un aide-mémoire de reprise de session et non un livrable.
 
-## 24. Prochaine étape
+## 24. Phase 18 — ce qui a été livré (Production Readiness Review) — **roadmap terminé**
 
-Phases 15, 16 et 17 terminées. Reste **Phase 18 (Production Readiness Review)** — dernière phase du roadmap. Pistes probables pour cette revue : vérifier que les 5 documents de la Phase 17 sont bien à jour, repasser en revue la liste de dette (§8 — Storage désactivé, empreinte SHA-1 release manquante, aucun build Android/iOS réel encore testé), et faire un bilan global de ce qui est prêt vs. ce qui reste bloqué par des contraintes externes à l'utilisateur (carte bancaire pour Blaze, machine sans la restriction réseau pour tester un vrai build).
+Dernière phase du plan initial. Revue globale, pas de nouvelle fonctionnalité. Un agent de recherche a vérifié des points jamais couverts par les 17 phases précédentes (icônes, nom affiché, écran de démarrage, usage réel d'`firebase_analytics`, textes de permission, hygiène `.gitignore`/secrets, logs de debug résiduels, cohérence du pattern `.when(loading/error/data)` sur tous les écrans, présence d'une licence) — synthétisé dans le nouveau **`PRODUCTION_READINESS.md`** à la racine du dépôt.
+
+Points nouveaux trouvés (aucun n'existait dans le suivi précédent) :
+- **Icônes et splash screen encore ceux par défaut de `flutter create`** — pas d'image de marque personnalisée. Bloquant pour une publication store, pas pour un usage personnel/bêta.
+- **`firebase_analytics` est une dépendance inutilisée** : présente dans `pubspec.yaml` mais aucun `FirebaseAnalytics`/`logEvent` nulle part dans `lib/`. Décision à prendre par l'utilisateur (retirer ou instrumenter), non tranchée ici.
+- **Aucune politique de confidentialité** dans le dépôt — obligatoire pour publier sur le Play Store/App Store dès que l'app collecte position/photos/identifiants (c'est le cas ici). Document légal, pas rédigé sans demande explicite de l'utilisateur.
+- Points déjà bons, confirmés sans changement nécessaire : nom d'app correctement affiché (`"TravelStories"`, pas le nom de package), versioning cohérent (source unique dans `pubspec.yaml`), textes de permission iOS déjà réels et en français (pas des placeholders), aucun `print`/`debugPrint` résiduel, aucun secret suivi par git, pattern `.when()` appliqué systématiquement sur les écrans à données async.
+
+**Verdict** (détail dans `PRODUCTION_READINESS.md`) : prêt pour un usage personnel ou une bêta fermée sur appareil réel ; pas prêt pour une publication store publique, mais pour des raisons de décisions produit/actifs graphiques (branding, politique de confidentialité, keystore de release, activation de Storage), pas de qualité de code — rien dans les 17 phases précédentes ne bloque techniquement une sortie.
+
+Aucun changement de code dans cette phase — uniquement `PRODUCTION_READINESS.md`, `flutter analyze`/`flutter test` non ré-exécutés (rien de Dart n'a changé).
+
+## 25. Prochaine étape
+
+**Le roadmap des 18 phases est terminé.** Ce qui reste est de la dette explicitement documentée (§8) et nécessite des actions/décisions de l'utilisateur plutôt que du code : activer Firebase Storage, créer un keystore de release (+ son empreinte SHA-1), tester un vrai build sur un appareil physique, et — nouveau depuis la Phase 18 — décider du sort d'`firebase_analytics`, fournir une image de marque (icône/splash) et rédiger une politique de confidentialité avant toute publication sur un store. Voir `PRODUCTION_READINESS.md` pour le détail complet et la checklist finale.
 
 ---
 

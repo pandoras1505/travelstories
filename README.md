@@ -86,6 +86,7 @@ Un pipeline GitHub Actions (`.github/workflows/ci.yml`) exécute l'analyse, les 
 - [SECURITY.md](SECURITY.md) — modèle de sécurité, règles Firestore/Storage, audit et correctifs appliqués.
 - [OFFLINE_SYNC.md](OFFLINE_SYNC.md) — fonctionnement du mode hors ligne et du moteur de synchronisation.
 - [DEPLOYMENT.md](DEPLOYMENT.md) — configuration Firebase, CI/CD, builds Android/iOS.
+- [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) — bilan de mise en production : ce qui est prêt, ce qui bloque encore une publication store.
 
 ## Limitations connues
 
