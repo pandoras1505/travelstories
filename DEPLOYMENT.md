@@ -59,11 +59,19 @@ Google Sign-In sur Android exige que l'empreinte SHA-1 du keystore de signature 
 
 ### Debug
 
+Depuis le 2026-09-04, `android/app/debug.keystore` est **commité dans le dépôt** et référencé explicitement dans `android/app/build.gradle.kts` (`signingConfigs { getByName("debug") { storeFile = file("debug.keystore") ... } }`) — pas sensible (jamais utilisé pour signer quoi que ce soit de distribué), volontairement exempté de l'exclusion `*.keystore` d'`android/.gitignore`. Ça garantit que **tous les builds debug (locaux et CI) partagent la même signature**, ce qui permet de mettre à jour une installation existante (`adb install -r`) plutôt que devoir désinstaller à chaque nouveau build — sans ce fichier fixe, chaque runner GitHub Actions éphémère génère son propre keystore de debug par défaut, donc deux builds CI n'ont jamais la même signature entre eux.
+
 ```bash
-keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
+keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android -keypass android
 ```
 
-(Sur Windows, remplacer `~/.android/debug.keystore` par `%USERPROFILE%\.android\debug.keystore` ; utiliser le `keytool.exe` fourni avec un JDK.)
+Une seule empreinte SHA-1 à enregistrer dans Firebase pour ce keystore, valable pour tous les builds debug désormais (plus besoin de la refaire par machine) :
+
+```
+SHA1: 91:91:0D:54:FD:DF:AE:56:43:FB:23:76:23:A8:D6:7F:0C:C0:B7:8D
+```
+
+Cette empreinte **remplace** celle du keystore de debug personnel (par machine) enregistrée précédemment — voir `HANDOFF.md` §5 pour laquelle est active à un instant donné.
 
 Alternative si Gradle fonctionne dans l'environnement : `cd android && ./gradlew signingReport`.
 
