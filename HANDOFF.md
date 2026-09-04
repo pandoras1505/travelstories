@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-04, fin de la **Phase 16** (CI/CD) — Phase 15 (Performance) volontairement sautée à la demande de l'utilisateur, voir §19.
+Dernière mise à jour : 2026-09-04, fin de la **Phase 16** (CI/CD), remote GitHub connecté et CI vérifiée en conditions réelles (voir §20) — Phase 15 (Performance) volontairement sautée à la demande de l'utilisateur, voir §19.
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan (README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT restent à créer, voir "Dette de documentation" en bas).
 
 ---
@@ -13,7 +13,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 - **Architecture** : Clean Architecture + Feature-First (`lib/features/{feature}/{domain,data,presentation}`), state management Riverpod **écrit à la main** (pas de codegen, voir §3).
 - **Backend** : Firebase, projet `travelstories-app` (région Firestore/Storage : eur3).
 - **Cible** : mobile (Android/iOS) uniquement. `web/` est gardé uniquement comme aide de QA locale (voir §5), pas un livrable.
-- **Git** : 20 commits sur `master`, aucun push distant (pas de remote configuré) — voir §20 pour ce que ça implique pour la CI/CD. Identité locale : `botcholi` / `botcholi@gmail.com`.
+- **Git** : 22 commits sur `main`, remote `origin` = `https://github.com/pandoras1505/travelstories.git` (connecté par l'utilisateur le 2026-09-04). Identité locale : `botcholi` / `botcholi@gmail.com`.
 
 ## 2. Roadmap — statut des 18 phases
 
@@ -34,7 +34,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 13 | Security Rules (audit complet) | ✅ (voir §16 — une faille réelle corrigée côté Storage) |
 | 14 | Tests (suite complète) | ✅ (2 vrais bugs corrigés au passage — voir §18) |
 | 15 | Performance | ⬜ **sautée à la demande de l'utilisateur** (2026-09-04) — pas commencée, pas de raison technique |
-| 16 | CI/CD | ✅ (voir §20 — CI écrite et vérifiée localement, mais inactive tant qu'aucun remote n'est connecté) |
+| 16 | CI/CD | ✅ (voir §20 — CI vérifiée en conditions réelles sur GitHub Actions, les deux jobs passent) |
 | 17 | Documentation | ⬜ |
 | 18 | Production Readiness Review | ⬜ |
 
@@ -79,6 +79,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 11. **Un `Future`-returning `flush()`/traitement en arrière-plan qui se contente de `if (_busy) return;` (retour immédiat sans rien faire) est un piège en test** : un appelant qui `await` ce genre de méthode croit à tort que le travail est terminé alors qu'un autre appel est peut-être encore en cours — repéré Phase 12 sur `SyncEngine.flush()`, où deux `enqueue()` back-to-back déclenchaient chacun leur propre `flush()` interne, et un test tentant d'attendre la fin recevait un retour prématuré, laissant une opération SQLite en vol qui plantait (`database_closed`) au `tearDown` du test suivant. Corrigé en faisant partager aux appels concurrents le **même `Future`** en cours (`_inFlight ??= _run().whenComplete(() => _inFlight = null)`) plutôt qu'un simple booléen de garde — un `await engine.flush()` explicite dans un test attend alors fiablement que tout passage en cours (même déclenché ailleurs) soit réellement terminé.
 12. **L'émulateur Firestore/Storage ne démarre pas ici non plus** : `firebase emulators:start` télécharge son `.jar` sans problème (Google Cloud Storage n'est pas bloqué), mais l'émulateur lui-même plante immédiatement au lancement — `java.io.IOException: Unable to establish loopback connection` en essayant d'ouvrir un `NioEventLoopGroup` (Netty). **Exactement la même cause racine que le blocage des builds Android (§4.1)** : tout JVM qui tente d'ouvrir un socket loopback local échoue sur cette machine, pas seulement Gradle. Testé explicitement avant la Phase 13 en espérant écrire de vrais tests unitaires sur `firestore.rules`/`storage.rules` (`@firebase/rules-unit-testing`) — impossible ici. Les règles ne sont donc validées que par relecture attentive + cohérence avec ce que le code écrit réellement, jamais exécutées avant déploiement.
 13. **`*.freezed.dart` étant gitignorés, un checkout frais (donc une CI) n'en a AUCUN au démarrage** : `flutter analyze`/`flutter test`/`flutter build` échoueraient immédiatement (la moitié des entités du domaine sont des classes `@freezed`) sans une étape explicite `dart run build_runner build` avant — contrairement à `gen-l10n` qui, lui, se relance tout seul via `generate: true` à chaque `flutter pub get`. Piège facile à ne pas voir en travaillant localement (les fichiers `.freezed.dart` traînent déjà d'une session à l'autre). Repéré et vérifié en simulant un checkout frais (suppression de `lib/core/localization/generated/`, de tous les `*.freezed.dart` et de `.dart_tool/build`, puis rejeu exact de la séquence `pub get` → `build_runner build` → `dart format --set-exit-if-changed` → `analyze` → `test`) avant d'écrire `.github/workflows/ci.yml` (Phase 16) — la séquence complète a été validée localement de cette façon ; seul le job de build Android (qui a besoin de Gradle) n'a pas pu l'être (§4.1).
+14. **Un workflow GitHub Actions dont les filtres `on.push.branches`/`on.pull_request.branches` ne correspondent pas au nom réel de la branche par défaut ne se déclenche jamais, sans aucune erreur visible nulle part** : `ci.yml` (Phase 16) a été écrit avec `branches: [master]` alors que ce repo utilise `main` (convention GitHub actuelle) — resté invisible tant qu'aucun remote n'était connecté, puisque rien ne pousse en local. Après connexion du remote (2026-09-04), seuls les workflows Dependabot apparaissaient dans l'onglet Actions ; `ci.yml` n'apparaissait tout simplement pas en historique, sans message d'erreur (un filtre de branche qui ne matche jamais n'est pas un échec, juste un non-événement). Vérifier `git branch` vs les filtres du workflow avant de chercher plus loin si une CI reste muette après un push.
 
 ## 5. État Firebase (projet `travelstories-app`)
 
@@ -134,7 +135,7 @@ Aucun test dédié pour : le rendu de carte (`flutter_map`, Phase 7) ni video_pl
 - [ ] Tester un vrai build Android/iOS sur une machine sans la restriction réseau (§4.1) ou sur un appareil physique.
 - [ ] Décider si on reste sur OpenStreetMap définitivement ou si Google Maps sera reconsidéré plus tard (carte bancaire disponible).
 - [ ] **Si des documents `users/{uid}` réels existent déjà dans le projet Firestore live** (créés avant la Phase 13), leur champ `email` traîne encore — l'app a arrêté de l'écrire mais rien ne l'a supprimé rétroactivement des documents existants. À nettoyer manuellement via la console Firebase (ou un script admin) si nécessaire ; pas fait ici pour ne pas toucher aux données live sans confirmation explicite. Probablement sans objet : aucun test "live" n'a été possible dans cet environnement (§4), donc il n'y a peut-être aucun vrai document utilisateur à ce jour.
-- [ ] **Connecter un remote GitHub pour que la CI (Phase 16, §20) serve réellement à quelque chose** : `.github/workflows/ci.yml` est écrit, syntaxe validée, et sa séquence de commandes vérifiée localement (voir §20) — mais tant qu'aucun remote n'est configuré et que rien n'est poussé, GitHub Actions n'a tout simplement rien à exécuter. Nécessite un dépôt GitHub (existant ou à créer par l'utilisateur — création de dépôt/push = actions qui demandent une confirmation explicite, pas faites automatiquement ici) puis `git remote add origin <url>` + `git push -u origin master`.
+- [x] ~~Connecter un remote GitHub pour que la CI serve à quelque chose~~ — fait par l'utilisateur le 2026-09-04 (`origin` = `https://github.com/pandoras1505/travelstories.git`, branche `main`). Voir §20 pour le bug de déclencheur découvert et corrigé dans la foulée, et le résultat du premier run réel.
 - [ ] **Phase 15 (Performance) volontairement sautée** à la demande de l'utilisateur le 2026-09-04, pour faire la Phase 16 en premier — pas de raison technique, juste un choix d'ordre. Toujours ⬜ dans le tableau §2, à reprendre quand souhaité.
 
 ## 9. Dette de documentation (Phase 17, pas encore commencée)
@@ -229,14 +230,18 @@ Pas commencée. L'utilisateur a explicitement demandé de passer directement à 
 - **`.github/workflows/ci.yml`** — deux jobs :
   - `analyze_and_test` (ubuntu-latest) : `flutter pub get` → `dart run build_runner build` → `dart format --set-exit-if-changed` → `flutter analyze` → `flutter test`. **Séquence entièrement vérifiée localement** en simulant un checkout frais (voir §4.13) — c'est le job dont on peut être sûr qu'il marchera.
   - `build_android` (ubuntu-latest, dépend du premier) : JDK 17 (`temurin`, aligné avec `android/app/build.gradle.kts`), puis `flutter build apk --debug` (pas `--release` : pas de keystore de signature configuré, voir §8), artefact APK uploadé (rétention 7 jours). **Pas vérifiable ici** — Gradle plante dans cet environnement pour la même raison que les builds Android locaux (§4.1) ; ce sera le tout premier vrai test de cette build, faute d'avoir jamais pu la faire aboutir ailleurs non plus (§8 : "tester un vrai build Android... pas encore fait").
-  - Déclencheurs : push sur `master`, pull request vers `master`, et déclenchement manuel (`workflow_dispatch`).
+  - Déclencheurs : push sur `main`, pull request vers `main`, et déclenchement manuel (`workflow_dispatch`).
   - Pas de job iOS (runner macOS + signature Apple, ni l'un ni l'autre n'existe) ni de publication Play Store/TestFlight — voir §3 pour le détail du scope.
 - **`.github/dependabot.yml`** — mises à jour hebdomadaires pour `pub` (dépendances Dart/Flutter) et `github-actions` (les actions utilisées dans `ci.yml` lui-même).
-- **Bloquant restant, hors de mon contrôle** : aucun remote configuré (§1) → tant qu'un dépôt GitHub n'est pas connecté et que rien n'est poussé, cette CI n'a littéralement rien sur quoi s'exécuter. Voir §8 pour l'action utilisateur correspondante. Pas de tentative de créer un dépôt ou de push depuis ici sans confirmation explicite.
+- **Remote connecté et CI vérifiée en conditions réelles (2026-09-04)** : l'utilisateur a connecté `origin` = `https://github.com/pandoras1505/travelstories.git` et poussé. Premier run resté bloqué en apparence — en fait il ne se déclenchait jamais : `ci.yml` filtrait sur `branches: [master]` alors que la branche du repo est `main` (écart introduit à la rédaction initiale du fichier, jamais remarqué localement puisque rien ne pousse en local). Corrigé (`master` → `main` dans les deux filtres `on:`), poussé (commit `864582b`), et le run déclenché par ce push a servi de première exécution réelle :
+  - `analyze_and_test` : ✅ succès, 3m46s (format, `flutter analyze`, `flutter test` — 69/69).
+  - `build_android` : ✅ succès, 9m3s — **premier build Android qui aboutit pour ce projet**, tous environnements confondus (impossible ici en local, §4.1). APK debug (95.5 Mo) uploadé en artefact GitHub Actions.
+  - Seuls avertissements : dépréciation Node 20 / `actions/setup-java@v4` côté GitHub — cosmétique, pas bloquant, à traiter un jour en bumpant les actions (`@v5`, etc.), pas urgent.
+- Plus de bloquant connu sur cette phase.
 
 ## 21. Prochaine étape
 
-Phase 16 terminée (mais dépend d'un push réel pour être vérifiée en conditions réelles — voir §20/§8). Phase 15 (Performance) reste ⬜, sautée à la demande de l'utilisateur, pas abandonnée. Suite logique : soit reprendre la Phase 15, soit enchaîner sur la Phase 17 (Documentation — README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT, voir §9) ou la Phase 18 (Production Readiness Review), selon ce que l'utilisateur préfère.
+Phase 16 terminée et vérifiée en conditions réelles (§20) : remote connecté, CI verte de bout en bout (analyze/test + build Android). Phase 15 (Performance) reste ⬜, sautée à la demande de l'utilisateur, pas abandonnée. Suite logique : soit reprendre la Phase 15, soit enchaîner sur la Phase 17 (Documentation — README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT, voir §9) ou la Phase 18 (Production Readiness Review), selon ce que l'utilisateur préfère.
 
 ---
 
