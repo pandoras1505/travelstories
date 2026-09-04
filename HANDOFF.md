@@ -1,7 +1,7 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-04, fin de la **Phase 15** (Performance) — reprise après la Phase 16 (CI/CD), voir §21.
-Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan (README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT restent à créer, voir "Dette de documentation" en bas).
+Dernière mise à jour : 2026-09-04, fin de la **Phase 17** (Documentation) — voir §23.
+Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan — les 5 documents exigés par le brief (`README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `OFFLINE_SYNC.md`, `DEPLOYMENT.md`) existent à la racine du dépôt depuis la Phase 17 (voir §9/§23).
 
 ---
 
@@ -35,7 +35,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 14 | Tests (suite complète) | ✅ (2 vrais bugs corrigés au passage — voir §18) |
 | 15 | Performance | ✅ (voir §21 — revue de code, aucun profiling possible ici ; un vrai correctif appliqué : taille de cache mémoire des images) |
 | 16 | CI/CD | ✅ (voir §20 — CI vérifiée en conditions réelles sur GitHub Actions, les deux jobs passent) |
-| 17 | Documentation | ⬜ |
+| 17 | Documentation | ✅ (voir §23 — README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT écrits) |
 | 18 | Production Readiness Review | ⬜ |
 
 ## 3. Décisions d'architecture actées
@@ -141,7 +141,7 @@ Aucun test dédié pour : le rendu de carte (`flutter_map`, Phase 7) ni video_pl
 
 ## 9. Dette de documentation (Phase 17, pas encore commencée)
 
-Le brief exige `README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `OFFLINE_SYNC.md`, `DEPLOYMENT.md` maintenus en continu. **Aucun n'a été créé pour l'instant** (seul le `README.md` par défaut de `flutter create` existe encore, jamais mis à jour). À faire en Phase 17, ou plus tôt si utile.
+Le brief exige `README.md`, `ARCHITECTURE.md`, `SECURITY.md`, `OFFLINE_SYNC.md`, `DEPLOYMENT.md` maintenus en continu. **Les 5 ont été écrits en Phase 17** (voir §23) — à maintenir à jour à chaque changement d'architecture, de règles de sécurité ou de pipeline de déploiement, indépendamment de ce fichier (`HANDOFF.md` reste un aide-mémoire de reprise de session, pas un livrable).
 
 ## 10. Phase 9 — ce qui a été livré (Home Feed + Explore)
 
@@ -256,9 +256,23 @@ Aucun profiling réel possible dans cet environnement (pas de build Android/iOS,
 - **Trouvé mais jugé non prioritaire, pas corrigé** : la réconciliation de cache local (`travel_book_repository_impl.dart`/`experience_repository_impl.dart`) supprime les lignes SQLite périmées une par une (`await` séquentiel) plutôt qu'en lot — négligeable au volume réaliste de cette app (quelques carnets/expériences par utilisateur, et seules les lignes réellement supprimées côté serveur déclenchent ce chemin).
 - **Vérification** : `flutter analyze` → 0 issue, `flutter test` → 69/69 verts (inchangé — ces tests exercent déjà les écrans modifiés, ce qui confirme que l'ajout des paramètres de cache ne casse rien). Aucune vérification visuelle possible (web cassé par `firebase_core_web`, voir §4.2 ; pas de build Android/iOS, voir §4.1) — cohérent avec la méthode de vérification des phases précédentes.
 
-## 22. Prochaine étape
+## 23. Phase 17 — ce qui a été livré (Documentation)
 
-Phases 15 et 16 terminées. Phase 16 vérifiée en conditions réelles (§20) : remote connecté, CI verte de bout en bout (analyze/test + build Android). Phase 15 (§21) : revue de performance ciblée, un vrai correctif appliqué (taille de cache image), reste du code déjà sain à cette échelle. Suite logique : Phase 17 (Documentation — README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT, voir §9) ou Phase 18 (Production Readiness Review), selon ce que l'utilisateur préfère.
+Les 5 documents exigés par le brief ont été écrits à la racine du dépôt, en français (choix explicite de l'utilisateur — cohérent avec ses échanges et `HANDOFF.md`) mais avec identifiants/chemins/extraits de code laissés en anglais tel quel dans le code source :
+
+- **`README.md`** — remplace le README par défaut de `flutter create` (jamais mis à jour jusqu'ici). Fonctionnalités, stack, structure du projet, démarrage, tests, liens vers les 4 autres documents, limitations connues.
+- **`ARCHITECTURE.md`** — Clean Architecture + Feature-First, structure des dossiers, Riverpod sans codegen (et pourquoi), navigation (`go_router`), hiérarchie `AppException`, médias, carte, tests (jamais de faux SDK Firebase).
+- **`SECURITY.md`** — modèle de sécurité par collection Firestore (`users`, `travelBooks`, `experiences`) et par chemin Storage, avec les règles reproduites et expliquées ; section dédiée à l'audit de la Phase 13 (faille Storage trouvée et corrigée, retrait du champ `email`) ; ce qui reste hors périmètre (rate-limiting, conflits multi-appareils) ; comment déployer/vérifier les règles.
+- **`OFFLINE_SYNC.md`** — fonctionnement de `localFirstStream`/`SyncEngine`, avec deux diagrammes `mermaid` (flux de lecture, flux d'écriture) ; garanties (ordre FIFO strict, coalescing des `flush()`, timeout par mutation) ; ce qui n'est pas couvert (conflits multi-appareils, médias hors file).
+- **`DEPLOYMENT.md`** — configuration Firebase (pourquoi les fichiers de config sont commités sans risque), déploiement des règles/index, statut de Storage, comment obtenir les empreintes SHA-1 (debug fait, release pas encore possible faute de keystore), détail des deux jobs CI, builds Android/iOS.
+
+Rédigés directement à partir de la relecture du code source réel (règles Firestore/Storage, `sync_engine.dart`, `app_router.dart`, `pubspec.yaml`, etc.) plutôt que par résumé de `HANDOFF.md`, pour éviter de propager une éventuelle inexactitude déjà présente ici. Aucun changement de code dans cette phase — uniquement les 5 fichiers Markdown, `flutter analyze`/`flutter test` non ré-exécutés (rien de Dart n'a changé).
+
+**À faire vivre en continu** (rappel du brief) : mettre à jour ces 5 fichiers à chaque changement d'architecture, de règles de sécurité ou de pipeline de déploiement — indépendamment de `HANDOFF.md`, qui reste un aide-mémoire de reprise de session et non un livrable.
+
+## 24. Prochaine étape
+
+Phases 15, 16 et 17 terminées. Reste **Phase 18 (Production Readiness Review)** — dernière phase du roadmap. Pistes probables pour cette revue : vérifier que les 5 documents de la Phase 17 sont bien à jour, repasser en revue la liste de dette (§8 — Storage désactivé, empreinte SHA-1 release manquante, aucun build Android/iOS réel encore testé), et faire un bilan global de ce qui est prêt vs. ce qui reste bloqué par des contraintes externes à l'utilisateur (carte bancaire pour Blaze, machine sans la restriction réseau pour tester un vrai build).
 
 ---
 
