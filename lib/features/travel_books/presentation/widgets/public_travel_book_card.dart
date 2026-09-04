@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +8,7 @@ import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_image.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
 import '../../domain/entities/travel_book.dart';
 
@@ -46,8 +46,8 @@ class PublicTravelBookCard extends ConsumerWidget {
               AspectRatio(
                 aspectRatio: 16 / 9,
                 child: book.coverImageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: book.coverImageUrl!,
+                    ? AppImage(
+                        path: book.coverImageUrl!,
                         fit: BoxFit.cover,
                         memCacheWidth: AppImageCache.coverWidth,
                       )
@@ -134,7 +134,7 @@ class _AuthorRow extends StatelessWidget {
         CircleAvatar(
           radius: 10,
           backgroundImage: photoUrl != null
-              ? CachedNetworkImageProvider(
+              ? appImageProvider(
                   photoUrl!,
                   maxWidth: AppImageCache.smallAvatar,
                   maxHeight: AppImageCache.smallAvatar,

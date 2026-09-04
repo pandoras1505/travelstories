@@ -1,23 +1,24 @@
-import 'dart:typed_data';
+import '../../../../core/media/local_media_store.dart';
 
-import 'package:firebase_storage/firebase_storage.dart';
-
-/// Thin wrapper around Storage uploads for profile avatars. Lets Storage
-/// exceptions propagate untouched — mapping to [StorageException] happens
-/// one layer up, in [ProfileRepositoryImpl].
+/// Stores the current user's avatar locally on-device — Firebase Storage
+/// isn't activated (see HANDOFF.md §4.3/§8). Lets I/O exceptions propagate
+/// untouched — mapping to `StorageException` happens one layer up, in
+/// `ProfileRepositoryImpl`.
 class AvatarStorageDataSource {
-  AvatarStorageDataSource({required FirebaseStorage storage})
-    : _storage = storage;
-
-  final FirebaseStorage _storage;
+  const AvatarStorageDataSource();
 
   Future<String> upload({
     required String uid,
     required List<int> fileBytes,
     required String fileExtension,
   }) async {
-    final ref = _storage.ref('users/$uid/profile/avatar.$fileExtension');
-    await ref.putData(Uint8List.fromList(fileBytes));
-    return ref.getDownloadURL();
+    final dir = 'users/$uid/profile';
+    // The previous avatar may have used a different extension — clear the
+    // whole directory first so it doesn't linger alongside the new file.
+    await deleteMediaDirectory(dir);
+    return writeMediaFile(
+      relativePath: '$dir/avatar.$fileExtension',
+      bytes: fileBytes,
+    );
   }
 }

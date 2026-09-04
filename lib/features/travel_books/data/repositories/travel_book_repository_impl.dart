@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/media/local_media_store.dart';
 import '../../../../core/offline/local_first_stream.dart';
 import '../../../../core/sync/pending_mutation.dart';
 import '../../../../core/sync/sync_engine.dart';
@@ -315,6 +318,14 @@ class TravelBookRepositoryImpl implements TravelBookRepository {
   Future<void> deleteTravelBook(String id) async {
     await _localDataSource.delete(id);
     await _experienceLocalDataSource.deleteByTravelBook(id);
+    try {
+      // Covers the book's own cover AND every experience's media, since
+      // both live under the same `travelBooks/$id/...` local media
+      // directory — see `local_media_store.dart`.
+      await deleteMediaDirectory('travelBooks/$id');
+    } on FileSystemException {
+      // Best-effort — a failed local cleanup shouldn't block the delete.
+    }
     await _syncEngine.enqueue('deleteTravelBook', {'id': id});
   }
 
@@ -339,31 +350,31 @@ class TravelBookRepositoryImpl implements TravelBookRepository {
     required List<int> fileBytes,
     required String fileExtension,
   }) async {
-    final String downloadUrl;
+    final String localPath;
     try {
-      downloadUrl = await _storageDataSource.upload(
+      localPath = await _storageDataSource.upload(
         travelBookId: travelBookId,
         fileBytes: fileBytes,
         fileExtension: fileExtension,
       );
-    } on fs.FirebaseException catch (e) {
+    } on FileSystemException catch (e) {
       throw StorageException(
-        'Storage error: ${e.code}',
-        code: e.code,
+        'Local storage error: ${e.message}',
+        code: 'io-error',
         cause: e,
       );
     }
 
     try {
       await _firestoreDataSource.update(travelBookId, {
-        'coverImageUrl': downloadUrl,
+        'coverImageUrl': localPath,
         'updatedAt': fs.FieldValue.serverTimestamp(),
       });
     } on fs.FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     }
 
-    return downloadUrl;
+    return localPath;
   }
 
   TravelBook _toTravelBook(fs.DocumentSnapshot<Map<String, dynamic>> snapshot) {

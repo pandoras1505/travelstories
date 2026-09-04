@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 
 import '../../../../core/errors/app_exception.dart';
@@ -80,34 +82,31 @@ class ProfileRepositoryImpl implements ProfileRepository {
     required List<int> fileBytes,
     required String fileExtension,
   }) async {
-    // cloud_firestore's and firebase_storage's `FirebaseException` are both
-    // the same re-exported firebase_core type, so they can't be told apart
-    // by catch type — each SDK call gets its own try/catch instead.
-    final String downloadUrl;
+    final String localPath;
     try {
-      downloadUrl = await _storageDataSource.upload(
+      localPath = await _storageDataSource.upload(
         uid: uid,
         fileBytes: fileBytes,
         fileExtension: fileExtension,
       );
-    } on fs.FirebaseException catch (e) {
+    } on FileSystemException catch (e) {
       throw StorageException(
-        'Storage error: ${e.code}',
-        code: e.code,
+        'Local storage error: ${e.message}',
+        code: 'io-error',
         cause: e,
       );
     }
 
     try {
       await _firestoreDataSource.update(uid, {
-        'photoUrl': downloadUrl,
+        'photoUrl': localPath,
         'updatedAt': fs.FieldValue.serverTimestamp(),
       });
     } on fs.FirebaseException catch (e) {
       throw _mapFirestoreException(e);
     }
 
-    return downloadUrl;
+    return localPath;
   }
 
   UserProfile? _toProfile(fs.DocumentSnapshot<Map<String, dynamic>> snapshot) {

@@ -28,6 +28,8 @@ TravelStories n'a pas de backend applicatif propre : tout le contrôle d'accès 
 
 ## Règles Storage (`storage.rules`)
 
+> **Dormantes tant que le bypass local est actif.** Firebase Storage n'est pas activé — les médias sont écrits directement sur le disque de l'appareil (voir [OFFLINE_SYNC.md](OFFLINE_SYNC.md#médias--stockage-local-en-attendant-storage), [DEPLOYMENT.md](DEPLOYMENT.md)), donc ces règles ne sont exécutées par personne pour l'instant : il n'y a pas de bucket Storage à protéger. La sécurité du stockage local, elle, repose sur le bac à sable du système d'exploitation (chaque app ne voit que son propre répertoire documents) — pas sur des règles applicatives. Le tableau ci-dessous reste la référence pour le jour où Storage sera activé.
+
 | Chemin | Lecture | Écriture / suppression |
 |---|---|---|
 | `users/{uid}/profile/*` | publique | propriétaire uniquement, image valide (`image/*`, < 15 Mo) |

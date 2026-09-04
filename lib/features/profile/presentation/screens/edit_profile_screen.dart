@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +8,7 @@ import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/validation_messages.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/app_image.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../controllers/edit_profile_controller.dart';
 import '../profile_error_messages.dart';
@@ -138,7 +138,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           CircleAvatar(
                             radius: 48,
                             backgroundImage: profile.photoUrl != null
-                                ? CachedNetworkImageProvider(
+                                ? appImageProvider(
                                     profile.photoUrl!,
                                     maxWidth: AppImageCache.largeAvatar,
                                     maxHeight: AppImageCache.largeAvatar,

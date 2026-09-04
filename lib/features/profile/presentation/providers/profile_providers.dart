@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../authentication/presentation/providers/auth_providers.dart';
@@ -17,9 +16,7 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
     firestoreDataSource: ProfileFirestoreDataSource(
       firestore: FirebaseFirestore.instance,
     ),
-    storageDataSource: AvatarStorageDataSource(
-      storage: FirebaseStorage.instance,
-    ),
+    storageDataSource: const AvatarStorageDataSource(),
   );
 });
 

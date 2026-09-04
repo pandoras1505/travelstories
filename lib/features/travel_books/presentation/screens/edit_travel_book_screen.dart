@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,6 +8,7 @@ import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/app_image.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../profile/presentation/profile_error_messages.dart';
 import '../controllers/edit_travel_book_controller.dart';
@@ -189,8 +189,8 @@ class _EditTravelBookScreenState extends ConsumerState<EditTravelBookScreen> {
                             fit: StackFit.expand,
                             children: [
                               book.coverImageUrl != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: book.coverImageUrl!,
+                                  ? AppImage(
+                                      path: book.coverImageUrl!,
                                       fit: BoxFit.cover,
                                       memCacheWidth: AppImageCache.coverWidth,
                                     )

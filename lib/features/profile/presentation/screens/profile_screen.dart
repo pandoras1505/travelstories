@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +6,7 @@ import '../../../../app/router/route_paths.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_image.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
 import '../providers/profile_providers.dart';
@@ -43,7 +43,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: CircleAvatar(
                   radius: 48,
                   backgroundImage: profile.photoUrl != null
-                      ? CachedNetworkImageProvider(
+                      ? appImageProvider(
                           profile.photoUrl!,
                           maxWidth: AppImageCache.largeAvatar,
                           maxHeight: AppImageCache.largeAvatar,

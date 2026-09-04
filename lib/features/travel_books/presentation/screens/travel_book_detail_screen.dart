@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +7,7 @@ import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_image.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
 import '../../../experiences/domain/entities/experience.dart';
@@ -70,8 +70,8 @@ class TravelBookDetailScreen extends ConsumerWidget {
                 ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: book.coverImageUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: book.coverImageUrl!,
+                      ? AppImage(
+                          path: book.coverImageUrl!,
                           fit: BoxFit.cover,
                           memCacheWidth: AppImageCache.coverWidth,
                         )
@@ -225,8 +225,8 @@ class _ExperienceCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     previewUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: previewUrl,
+                        ? AppImage(
+                            path: previewUrl,
                             fit: BoxFit.cover,
                             memCacheWidth: AppImageCache.coverWidth,
                           )

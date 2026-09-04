@@ -90,6 +90,6 @@ Un pipeline GitHub Actions (`.github/workflows/ci.yml`) exécute l'analyse, les 
 
 ## Limitations connues
 
-- **Firebase Storage n'est pas activé** (nécessite le plan payant Blaze) : l'upload de médias (avatar, couverture, photo/vidéo d'expérience) échoue tant que ce n'est pas fait. Le reste de l'app fonctionne normalement.
+- **Firebase Storage n'est pas activé** (nécessite le plan payant Blaze) : les médias (avatar, couverture, photo/vidéo d'expérience) sont donc stockés **localement sur l'appareil** plutôt qu'uploadés (voir [OFFLINE_SYNC.md](OFFLINE_SYNC.md#médias--stockage-local-en-attendant-storage)). Fonctionne pour un usage sur un seul appareil ; un carnet "publié" ne montre ses médias qu'à son propriétaire, sur l'appareil où ils ont été ajoutés — les autres utilisateurs et les autres appareils du même compte ne les verront pas tant que Storage n'est pas activé.
 - **Pas de job iOS en CI** : nécessiterait un runner macOS et une signature Apple, aucun des deux n'est configuré.
 - La carte utilise OpenStreetMap (gratuit, sans clé API) plutôt que Google Maps — choix définitif, voir [ARCHITECTURE.md](ARCHITECTURE.md#carte).

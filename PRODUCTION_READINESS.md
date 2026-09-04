@@ -49,7 +49,7 @@ Ces points n'étaient pas dans le roadmap initial mais conditionnent une vraie s
 
 | Bloquant | Cause | Statut |
 |---|---|---|
-| Firebase Storage non activé | Nécessite le plan Blaze (carte bancaire) | **Décision confirmée** : reste désactivé pour l'instant |
+| Firebase Storage non activé | Nécessite le plan Blaze (carte bancaire) | **Décision confirmée** : reste désactivé — contourné par un stockage local des médias (voir [OFFLINE_SYNC.md](OFFLINE_SYNC.md#médias--stockage-local-en-attendant-storage)). L'upload fonctionne donc à nouveau pour un usage sur un seul appareil, mais un carnet publié ne montre ses médias qu'à son propriétaire sur cet appareil — **nouveau bloquant pour une publication store** tant que ça reste le cas, puisque le partage public de photos/vidéos ne fonctionnerait pas pour les autres utilisateurs |
 | Empreinte SHA-1 release manquante | Aucun keystore de release créé | En attente — voir [DEPLOYMENT.md](DEPLOYMENT.md) pour la procédure quand tu seras prêt |
 | Aucun build Android/iOS réel testé | Restriction réseau de la machine de développement (voir `HANDOFF.md` §4.1) | À tester sur un appareil physique ou une autre machine — la CI GitHub Actions a produit un APK debug qui s'est buildé avec succès, c'est la meilleure preuve indirecte obtenue à ce jour |
 | Carte OpenStreetMap vs Google Maps | Carte bancaire indisponible pour Google Maps Platform | **Décision confirmée définitive** : OpenStreetMap |
@@ -61,10 +61,11 @@ Ces points n'étaient pas dans le roadmap initial mais conditionnent une vraie s
 - [x] Performance : revue faite, un correctif réel appliqué
 - [x] Documentation : les 5 fichiers requis existent et sont à jour
 - [x] Gestion d'erreurs et rapport de crash en place
+- [x] Upload de médias fonctionnel (stockage local en attendant Storage — usage un seul appareil uniquement, voir ci-dessus)
 - [ ] Image de marque (icône, splash) personnalisée
 - [ ] Politique de confidentialité publiée (obligatoire pour les stores)
 - [ ] Décision sur `firebase_analytics` (retirer ou instrumenter)
-- [ ] Storage activé (bloque l'upload de médias en usage réel, pas seulement la publication)
+- [ ] Storage activé (nécessaire pour que le partage public de médias fonctionne pour les autres utilisateurs, pas pour l'upload en lui-même)
 - [ ] Keystore de release + empreinte SHA-1 associée
 - [ ] Build réel testé sur un appareil physique
 - [ ] Clés API Firebase restreintes par app/API dans Google Cloud Console (voir [SECURITY.md](SECURITY.md#à-propos-des-alertes-github-google-api-key))

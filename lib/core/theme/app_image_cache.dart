@@ -1,8 +1,9 @@
-/// `memCacheWidth`/`memCacheHeight` hints for [CachedNetworkImage] and
-/// [CachedNetworkImageProvider], sized to how large each image actually
-/// renders on screen — decoding a full-resolution upload (up to 2560px,
-/// see `MediaService`) for a small card thumbnail wastes decode time and
-/// memory for no visible gain.
+/// Image decode-size hints, sized to how large each image actually renders
+/// on screen — decoding a full-resolution upload (up to 2560px, see
+/// `MediaService`) for a small card thumbnail wastes decode time and memory
+/// for no visible gain. Passed through `AppImage`/`appImageProvider`
+/// (`core/widgets/app_image.dart`) as `memCacheWidth`/`maxWidth`+`maxHeight`
+/// either way, whether the underlying image is a remote URL or a local file.
 class AppImageCache {
   AppImageCache._();
 

@@ -1,25 +1,24 @@
-import 'dart:typed_data';
+import '../../../../core/media/local_media_store.dart';
 
-import 'package:firebase_storage/firebase_storage.dart';
-
-/// Thin wrapper around Storage uploads for travel book covers. Lets Storage
-/// exceptions propagate untouched — mapping to [StorageException] happens
-/// one layer up, in [TravelBookRepositoryImpl].
+/// Stores a travel book's cover locally on-device — Firebase Storage isn't
+/// activated (see HANDOFF.md §4.3/§8). Lets I/O exceptions propagate
+/// untouched — mapping to `StorageException` happens one layer up, in
+/// `TravelBookRepositoryImpl`.
 class CoverStorageDataSource {
-  CoverStorageDataSource({required FirebaseStorage storage})
-    : _storage = storage;
-
-  final FirebaseStorage _storage;
+  const CoverStorageDataSource();
 
   Future<String> upload({
     required String travelBookId,
     required List<int> fileBytes,
     required String fileExtension,
   }) async {
-    final ref = _storage.ref(
-      'travelBooks/$travelBookId/cover/cover.$fileExtension',
+    final dir = 'travelBooks/$travelBookId/cover';
+    // The previous cover may have used a different extension — clear the
+    // whole directory first so it doesn't linger alongside the new file.
+    await deleteMediaDirectory(dir);
+    return writeMediaFile(
+      relativePath: '$dir/cover.$fileExtension',
+      bytes: fileBytes,
     );
-    await ref.putData(Uint8List.fromList(fileBytes));
-    return ref.getDownloadURL();
   }
 }

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/database_providers.dart';
@@ -32,9 +31,7 @@ final travelBookRepositoryProvider = Provider<TravelBookRepository>((ref) {
     firestoreDataSource: TravelBookFirestoreDataSource(
       firestore: FirebaseFirestore.instance,
     ),
-    storageDataSource: CoverStorageDataSource(
-      storage: FirebaseStorage.instance,
-    ),
+    storageDataSource: const CoverStorageDataSource(),
     localDataSource: TravelBookLocalDataSource(database: database),
     experienceLocalDataSource: ExperienceLocalDataSource(database: database),
     syncEngine: ref.watch(syncEngineProvider),

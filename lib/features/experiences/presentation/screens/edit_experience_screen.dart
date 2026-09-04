@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +7,7 @@ import '../../../../core/localization/generated/app_localizations.dart';
 import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_image.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../location/domain/entities/geo_position.dart';
 import '../../../location/presentation/location_picking_mixin.dart';
@@ -334,8 +334,8 @@ class _MediaPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     if (experience.mediaType == ExperienceMediaType.image &&
         experience.mediaUrl != null) {
-      return CachedNetworkImage(
-        imageUrl: experience.mediaUrl!,
+      return AppImage(
+        path: experience.mediaUrl!,
         fit: BoxFit.cover,
         memCacheWidth: AppImageCache.coverWidth,
       );
@@ -346,8 +346,8 @@ class _MediaPreview extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         experience.thumbnailUrl != null
-            ? CachedNetworkImage(
-                imageUrl: experience.thumbnailUrl!,
+            ? AppImage(
+                path: experience.thumbnailUrl!,
                 fit: BoxFit.cover,
                 memCacheWidth: AppImageCache.coverWidth,
               )

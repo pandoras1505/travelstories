@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
 
 import '../../../../core/errors/app_exception.dart';
@@ -243,6 +245,14 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
       delta: -1,
       updatedAt: DateTime.now(),
     );
+    try {
+      await _mediaStorageDataSource.deleteAll(
+        travelBookId: travelBookId,
+        experienceId: id,
+      );
+    } on FileSystemException {
+      // Best-effort — a failed local cleanup shouldn't block the delete.
+    }
     await _syncEngine.enqueue('deleteExperience', {
       'travelBookId': travelBookId,
       'id': id,
@@ -288,6 +298,13 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
     final String mediaUrl;
     String? thumbnailUrl;
     try {
+      // Clear any previous media first — extension or media type (image ↔
+      // video) may differ from what's already on disk, which would
+      // otherwise leave an orphaned file behind.
+      await _mediaStorageDataSource.deleteAll(
+        travelBookId: travelBookId,
+        experienceId: id,
+      );
       mediaUrl = await _mediaStorageDataSource.uploadMedia(
         travelBookId: travelBookId,
         experienceId: id,
@@ -301,10 +318,10 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
           bytes: thumbnailBytes,
         );
       }
-    } on fs.FirebaseException catch (e) {
+    } on FileSystemException catch (e) {
       throw StorageException(
-        'Storage error: ${e.code}',
-        code: e.code,
+        'Local storage error: ${e.message}',
+        code: 'io-error',
         cause: e,
       );
     }
@@ -331,10 +348,10 @@ class ExperienceRepositoryImpl implements ExperienceRepository {
         travelBookId: travelBookId,
         experienceId: id,
       );
-    } on fs.FirebaseException catch (e) {
+    } on FileSystemException catch (e) {
       throw StorageException(
-        'Storage error: ${e.code}',
-        code: e.code,
+        'Local storage error: ${e.message}',
+        code: 'io-error',
         cause: e,
       );
     }

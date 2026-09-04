@@ -74,7 +74,11 @@ Structure des routes (voir `lib/app/router/app_router.dart`) :
 
 ## Médias
 
-Le pipeline d'upload est le même partout (avatar, couverture de carnet, média d'expérience) : compression côté client (`flutter_image_compress`, cap à 2560px de long côté) → upload Firebase Storage → mise à jour du document Firestore correspondant, jamais l'inverse. Les vidéos ne sont pas recompressées côté client (packages jugés trop fragiles) ; leur durée est plafonnée à 60 secondes à la capture.
+Le pipeline est le même partout (avatar, couverture de carnet, média d'expérience) : compression côté client (`flutter_image_compress`, cap à 2560px de long côté) → stockage du fichier → mise à jour du document Firestore correspondant, jamais l'inverse. Les vidéos ne sont pas recompressées côté client (packages jugés trop fragiles) ; leur durée est plafonnée à 60 secondes à la capture.
+
+**Stockage actuel : local, pas Firebase Storage** (Storage n'est pas activé — voir [DEPLOYMENT.md](DEPLOYMENT.md)). `AvatarStorageDataSource`/`CoverStorageDataSource`/`ExperienceMediaStorageDataSource` (une par feature, comme avant) écrivent désormais sur le disque de l'appareil via `lib/core/media/local_media_store.dart`, en reproduisant exactement l'arborescence de chemins qu'utilisait Firebase Storage (`users/{uid}/profile/...`, `travelBooks/{id}/cover/...`, `travelBooks/{id}/experiences/{id}/...`) sous `<répertoire documents de l'app>/media/`. Le champ Firestore (`photoUrl`/`coverImageUrl`/`mediaUrl`/`thumbnailUrl`) contient donc un chemin de fichier local, pas une URL `https://`. Détail complet dans [OFFLINE_SYNC.md](OFFLINE_SYNC.md#médias--stockage-local-en-attendant-storage).
+
+L'affichage gère les deux cas de figure de façon transparente via `AppImage`/`appImageProvider` (`lib/core/widgets/app_image.dart`) — un chemin `http(s)://` est rendu comme avant via `CachedNetworkImage`, un chemin local via `Image.file`/`FileImage`. Aucun écran n'a besoin de savoir lequel des deux il affiche.
 
 ## Carte
 

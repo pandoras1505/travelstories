@@ -40,13 +40,18 @@ firebase deploy --only storage    # uniquement une fois Storage activé
 
 `firestore.indexes.json` définit 4 index composites, nécessaires au tri/recherche d'Explorer (`isPublic+createdAt`, `ownerId+updatedAt`, `isPublic+experienceCount+createdAt`, `isPublic+title+createdAt`).
 
-## Firebase Storage — statut actuel : non activé
+## Firebase Storage — statut actuel : non activé, contourné par un stockage local
 
-Storage nécessite le plan **Blaze** (facturation à l'usage, carte bancaire requise même pour rester dans le quota gratuit) depuis fin 2024. Tant qu'il n'est pas activé :
-- `storage.rules` est écrit et durci (voir [SECURITY.md](SECURITY.md)) mais **ne peut pas être déployé** (`firebase deploy --only storage` échoue tant que le bucket par défaut n'existe pas).
-- L'upload de médias (avatar, couverture, photo/vidéo d'expérience) échoue à l'exécution — le code est fonctionnel, juste bloqué par l'absence du bucket.
+Storage nécessite le plan **Blaze** (facturation à l'usage, carte bancaire requise même pour rester dans le quota gratuit) depuis fin 2024 — indisponible pour ce projet. Plutôt que de bloquer l'upload de médias, `AvatarStorageDataSource`/`CoverStorageDataSource`/`ExperienceMediaStorageDataSource` écrivent directement sur le disque de l'appareil (voir [OFFLINE_SYNC.md](OFFLINE_SYNC.md#médias--stockage-local-en-attendant-storage) pour le détail) — c'est un choix délibéré de l'utilisateur, pas un correctif temporaire oublié.
 
-Pour activer : Console Firebase → Storage → *Get Started* → passer au plan Blaze, puis déployer `storage.rules`.
+- `storage.rules` reste écrit et durci (voir [SECURITY.md](SECURITY.md)) mais **ne peut pas être déployé** (`firebase deploy --only storage` échoue tant que le bucket par défaut n'existe pas) et n'est de toute façon plus sollicité par l'app tant que le bypass local est actif.
+- La dépendance `firebase_storage` (`pubspec.yaml`) est gardée mais **n'est plus importée nulle part dans `lib/`** — conservée pour ne pas complexifier une réactivation future, pas retirée comme une dépendance inutilisée ordinaire (voir `PRODUCTION_READINESS.md` pour le distinguo avec `firebase_analytics`, qui lui est un oubli, pas un choix).
+- **Conséquence produit à connaître** : un média n'est visible que sur l'appareil qui l'a créé — un carnet publié ne montre ses photos/vidéos qu'à son propriétaire, jamais aux autres utilisateurs ni aux autres appareils du même compte, tant que Storage n'est pas activé.
+
+**Pour activer Storage et revenir à un vrai stockage cloud** :
+1. Console Firebase → Storage → *Get Started* → passer au plan Blaze.
+2. `firebase deploy --only storage`.
+3. Réécrire les 3 classes `*StorageDataSource` pour appeler `FirebaseStorage.instance` comme avant (voir l'historique git de ces fichiers pour la version pré-bypass) — aucun autre fichier (repository, écran, schéma Firestore) n'a besoin de changer, `AppImage`/`appImageProvider` gèrent déjà indifféremment une URL `https://` ou un chemin local.
 
 ## Empreintes SHA-1 (Google Sign-In Android)
 
