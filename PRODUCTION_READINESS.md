@@ -23,6 +23,7 @@ Traité en détail dans [SECURITY.md](SECURITY.md). Résumé :
 - Règles Firestore et Storage écrites, durcies (audit Phase 13 : une faille réelle trouvée et corrigée côté Storage), et **déployées pour Firestore** (Storage non déployable tant qu'il n'est pas activé, voir §4).
 - Aucune donnée sensible dans un document lisible largement (`email` retiré de `users/{uid}`).
 - `google-services.json`/`GoogleService-Info.plist`/`firebase_options.dart` commités par choix — ce sont des clés client, pas des secrets serveur ; aucun `.env`/`.jks`/`.keystore`/`key.properties` n'est suivi par git.
+- **Clés API Firebase (`firebase_options.dart`)** : GitHub secret scanning les signale par défaut (pattern `AIza...`). Ce n'est pas une fuite à corriger en régénérant la clé — voir [SECURITY.md](SECURITY.md#à-propos-des-alertes-github-google-api-key) pour la procédure correcte (restreindre chaque clé par app/API dans Google Cloud Console).
 - **Non couvert, à noter** : pas de rate-limiting/anti-abus (nécessiterait Cloud Functions), pas de tests automatisés des règles (émulateur Firestore/Storage indisponible dans l'environnement de développement d'origine — les règles n'ont été validées que par relecture).
 
 ## 3. Performance
@@ -66,6 +67,7 @@ Ces points n'étaient pas dans le roadmap initial mais conditionnent une vraie s
 - [ ] Storage activé (bloque l'upload de médias en usage réel, pas seulement la publication)
 - [ ] Keystore de release + empreinte SHA-1 associée
 - [ ] Build réel testé sur un appareil physique
+- [ ] Clés API Firebase restreintes par app/API dans Google Cloud Console (voir [SECURITY.md](SECURITY.md#à-propos-des-alertes-github-google-api-key))
 
 ## Conclusion
 

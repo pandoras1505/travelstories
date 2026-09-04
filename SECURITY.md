@@ -65,6 +65,17 @@ Une relecture complète des deux fichiers de règles a été menée contre ce qu
 - Aucun message ou code d'erreur brut du SDK Firebase n'atteint l'utilisateur : chaque implémentation de repository mappe les exceptions natives vers la hiérarchie `AppException` (`lib/core/errors/app_exception.dart`), et des fonctions dédiées par domaine traduisent le `code` optionnel en message localisé.
 - `google-services.json`, `GoogleService-Info.plist` et `firebase_options.dart` sont commités dans le dépôt : ce sont des clés client publiques (identifient l'app auprès de Firebase), pas des secrets serveur — la vraie protection vient des Security Rules ci-dessus, pas du secret de ces fichiers. Voir [DEPLOYMENT.md](DEPLOYMENT.md).
 
+### À propos des alertes GitHub "Google API Key"
+
+GitHub secret scanning signale par défaut toute chaîne au format `AIza...` trouvée dans le code — y compris les clés Firebase client ci-dessus, qui ne sont pas des secrets à proprement parler mais qui **doivent être restreintes** pour éviter un abus (appels à d'autres API Google sous ce projet, facturation non désirée). Ce n'est pas une fuite à corriger en supprimant le fichier ou en régénérant la clé — l'action correcte est de vérifier/poser des restrictions dans [Google Cloud Console → APIs & Services → Identifiants](https://console.cloud.google.com/apis/credentials) :
+
+- Clé Android : restreindre aux applications Android portant le nom de package `com.travelstories.app` + l'empreinte SHA-1 du keystore (voir [DEPLOYMENT.md](DEPLOYMENT.md) pour l'obtenir).
+- Clé iOS : restreindre aux applications iOS portant le bundle ID `com.travelstories.app`.
+- Clé Web : moins prioritaire, le build web n'étant pas une cible livrable de ce projet (voir `HANDOFF.md` §4.2).
+- Pour les trois : restreindre également les API autorisées à celles réellement utilisées (Identity Toolkit, Cloud Firestore, Firebase Installations, etc.) plutôt que "ne pas restreindre".
+
+Une fois les restrictions posées, les alertes GitHub correspondantes peuvent être closes en "Won't fix" (pas "Revoked" — régénérer une clé Firebase par défaut casserait les clients déjà installés sans bénéfice de sécurité réel ici).
+
 ## Déployer et vérifier les règles
 
 ```bash
