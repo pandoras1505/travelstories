@@ -144,6 +144,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     maxHeight: AppImageCache.largeAvatar,
                                   )
                                 : null,
+                            // See profile_screen.dart — avoid reporting the
+                            // expected "local avatar file doesn't exist on
+                            // this device" case to Crashlytics.
+                            onBackgroundImageError: profile.photoUrl != null
+                                ? (error, stackTrace) {}
+                                : null,
                             child: profile.photoUrl == null
                                 ? Text(
                                     profile.displayName.isNotEmpty

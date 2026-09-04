@@ -52,6 +52,13 @@ class ProfileScreen extends ConsumerWidget {
                           maxHeight: AppImageCache.largeAvatar,
                         )
                       : null,
+                  // A local avatar path only resolves on the device that
+                  // wrote it (see AppImage) — silence the framework's
+                  // default error reporting for the expected "file doesn't
+                  // exist here" case rather than let it reach Crashlytics.
+                  onBackgroundImageError: profile.photoUrl != null
+                      ? (error, stackTrace) {}
+                      : null,
                   child: profile.photoUrl == null
                       ? Text(
                           profile.displayName.isNotEmpty

@@ -140,6 +140,14 @@ class _AuthorRow extends StatelessWidget {
                   maxHeight: AppImageCache.smallAvatar,
                 )
               : null,
+          // A local avatar path only resolves on the device that wrote it
+          // (see AppImage) — this is the common case here, since most
+          // authors shown on a public card aren't the current device's
+          // owner. Silence the framework's default error reporting rather
+          // than let it reach Crashlytics as a false "crash".
+          onBackgroundImageError: photoUrl != null
+              ? (error, stackTrace) {}
+              : null,
           child: photoUrl == null
               ? Text(
                   name.isNotEmpty ? name[0].toUpperCase() : '?',
