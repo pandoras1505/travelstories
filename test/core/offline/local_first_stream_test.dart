@@ -73,20 +73,53 @@ void main() {
       },
     );
 
+    test('swallows a remote error once a non-empty cache was already emitted, '
+        'and keeps retrying rather than ending', () async {
+      var calls = 0;
+      final stream = localFirstStream<int>(
+        readCache: () async => [1],
+        watchRemote: () {
+          calls++;
+          return Stream.error(Exception('offline'));
+        },
+        onRemoteData: (items) async {},
+        retryDelay: Duration.zero,
+      );
+
+      final events = <List<int>>[];
+      final subscription = stream.listen(events.add);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await subscription.cancel();
+
+      expect(events, [
+        [1],
+      ]);
+      // Never gives up: watchRemote() gets called again after each error.
+      expect(calls, greaterThan(1));
+    });
+
     test(
-      'swallows a remote error once a non-empty cache was already emitted',
+      'resumes emitting once watchRemote() succeeds again after an error '
+      '(e.g. reconnecting, or re-authenticating as the right user)',
       () async {
+        var attempt = 0;
         final stream = localFirstStream<int>(
           readCache: () async => [1],
-          watchRemote: () => Stream.error(Exception('offline')),
+          watchRemote: () {
+            attempt++;
+            return attempt == 1
+                ? Stream.error(Exception('permission-denied'))
+                : Stream.value([1, 2]);
+          },
           onRemoteData: (items) async {},
+          retryDelay: Duration.zero,
         );
 
-        expect(
+        await expectLater(
           stream,
           emitsInOrder([
             [1],
-            emitsDone,
+            [1, 2],
           ]),
         );
       },
@@ -149,5 +182,48 @@ void main() {
 
       expect(stream, emitsError(isException));
     });
+
+    test('swallows a remote error once a cache was already emitted, and keeps '
+        'retrying rather than ending', () async {
+      var calls = 0;
+      final stream = localFirstSingleStream<String>(
+        readCache: () async => 'cached',
+        watchRemote: () {
+          calls++;
+          return Stream.error(Exception('permission-denied'));
+        },
+        onRemoteData: (item) async {},
+        retryDelay: Duration.zero,
+      );
+
+      final events = <String?>[];
+      final subscription = stream.listen(events.add);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await subscription.cancel();
+
+      expect(events, ['cached']);
+      expect(calls, greaterThan(1));
+    });
+
+    test(
+      'resumes emitting once watchRemote() succeeds again after an error '
+      '(e.g. reconnecting, or re-authenticating as the right user)',
+      () async {
+        var attempt = 0;
+        final stream = localFirstSingleStream<String>(
+          readCache: () async => 'cached',
+          watchRemote: () {
+            attempt++;
+            return attempt == 1
+                ? Stream.error(Exception('permission-denied'))
+                : Stream.value('fresh');
+          },
+          onRemoteData: (item) async {},
+          retryDelay: Duration.zero,
+        );
+
+        await expectLater(stream, emitsInOrder(['cached', 'fresh']));
+      },
+    );
   });
 }

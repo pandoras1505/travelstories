@@ -30,7 +30,9 @@ sequenceDiagram
     Repo-->>UI: émet les données fraîches
 ```
 
-Si `watchRemote()` échoue (typiquement : pas de connexion) **après** qu'un cache non vide a déjà été émis, l'erreur est avalée : l'UI garde simplement le dernier état connu plutôt que de basculer sur un écran d'erreur. Elle n'est propagée que s'il n'y avait rien à afficher en repli.
+Si `watchRemote()` échoue (typiquement : pas de connexion, ou un `permission-denied` transitoire pendant un changement de compte) **après** qu'un cache non vide a déjà été émis, l'erreur est avalée : l'UI garde simplement le dernier état connu plutôt que de basculer sur un écran d'erreur, et `watchRemote()` est **rappelé automatiquement après un court délai** (3s par défaut) plutôt que d'abandonner définitivement. L'erreur n'est propagée (et le flux ne s'arrête) que s'il n'y avait rien à afficher en repli.
+
+> **Bug corrigé (2026-09-04)** : la version précédente avalait bien l'erreur, mais laissait ensuite le flux se terminer purement et simplement — un fournisseur Riverpod n'étant pas `autoDispose`, cela gelait silencieusement les mises à jour de ce document pour le reste de la session, même une fois la connexion ou l'authentification redevenue valide. Repéré en testant l'app sur un appareil réel : après un changement de compte (donc un `permission-denied` transitoire sur le document précédemment observé), l'écran de détail d'un carnet n'affichait plus jamais sa couverture alors que la liste, elle, la montrait correctement (sa propre requête n'avait pas été affectée par la même erreur). Corrigé en réécrivant `localFirstStream`/`localFirstSingleStream` avec `Stream.multi` plutôt que `async*`/`await for` — nécessaire pour qu'annuler l'abonnement au flux interrompe réellement une tentative de reconnexion en attente (un générateur `async*` ne remarque une annulation qu'à un `yield`, jamais atteint pendant une boucle de nouvelle tentative qui échoue).
 
 Chaque snapshot Firestore frais est mirroré dans SQLite, puis réconcilié : les lignes locales qui ne sont plus dans le snapshot (supprimées côté serveur pendant que l'appareil était hors ligne) sont effacées localement.
 
