@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
+import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/state_views.dart';
@@ -72,6 +73,7 @@ class TravelBookDetailScreen extends ConsumerWidget {
                       ? CachedNetworkImage(
                           imageUrl: book.coverImageUrl!,
                           fit: BoxFit.cover,
+                          memCacheWidth: AppImageCache.coverWidth,
                         )
                       : ColoredBox(
                           color: Theme.of(
@@ -226,6 +228,7 @@ class _ExperienceCard extends StatelessWidget {
                         ? CachedNetworkImage(
                             imageUrl: previewUrl,
                             fit: BoxFit.cover,
+                            memCacheWidth: AppImageCache.coverWidth,
                           )
                         : ColoredBox(color: scheme.surfaceContainerHigh),
                     if (experience.mediaType == ExperienceMediaType.video &&

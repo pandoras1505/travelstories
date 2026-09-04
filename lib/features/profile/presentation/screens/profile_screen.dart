@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
+import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../authentication/presentation/providers/auth_providers.dart';
@@ -42,7 +43,11 @@ class ProfileScreen extends ConsumerWidget {
                 child: CircleAvatar(
                   radius: 48,
                   backgroundImage: profile.photoUrl != null
-                      ? CachedNetworkImageProvider(profile.photoUrl!)
+                      ? CachedNetworkImageProvider(
+                          profile.photoUrl!,
+                          maxWidth: AppImageCache.largeAvatar,
+                          maxHeight: AppImageCache.largeAvatar,
+                        )
                       : null,
                   child: profile.photoUrl == null
                       ? Text(

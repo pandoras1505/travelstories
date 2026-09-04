@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
+import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/validation_messages.dart';
 import '../../../../core/utils/validators.dart';
@@ -137,7 +138,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           CircleAvatar(
                             radius: 48,
                             backgroundImage: profile.photoUrl != null
-                                ? CachedNetworkImageProvider(profile.photoUrl!)
+                                ? CachedNetworkImageProvider(
+                                    profile.photoUrl!,
+                                    maxWidth: AppImageCache.largeAvatar,
+                                    maxHeight: AppImageCache.largeAvatar,
+                                  )
                                 : null,
                             child: profile.photoUrl == null
                                 ? Text(

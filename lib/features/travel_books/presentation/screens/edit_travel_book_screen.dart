@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
+import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/validators.dart';
@@ -191,6 +192,7 @@ class _EditTravelBookScreenState extends ConsumerState<EditTravelBookScreen> {
                                   ? CachedNetworkImage(
                                       imageUrl: book.coverImageUrl!,
                                       fit: BoxFit.cover,
+                                      memCacheWidth: AppImageCache.coverWidth,
                                     )
                                   : ColoredBox(
                                       color: Theme.of(

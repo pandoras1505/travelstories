@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/route_paths.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
+import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -79,6 +80,7 @@ class _TravelBookCard extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: book.coverImageUrl!,
                         fit: BoxFit.cover,
+                        memCacheWidth: AppImageCache.coverWidth,
                       )
                     : ColoredBox(
                         color: scheme.surfaceContainerHigh,

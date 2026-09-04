@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/localization/generated/app_localizations.dart';
+import '../../../../core/theme/app_image_cache.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/state_views.dart';
@@ -336,6 +337,7 @@ class _MediaPreview extends StatelessWidget {
       return CachedNetworkImage(
         imageUrl: experience.mediaUrl!,
         fit: BoxFit.cover,
+        memCacheWidth: AppImageCache.coverWidth,
       );
     }
 
@@ -347,6 +349,7 @@ class _MediaPreview extends StatelessWidget {
             ? CachedNetworkImage(
                 imageUrl: experience.thumbnailUrl!,
                 fit: BoxFit.cover,
+                memCacheWidth: AppImageCache.coverWidth,
               )
             : ColoredBox(color: scheme.surfaceContainerHigh),
         if (experience.mediaUrl != null)

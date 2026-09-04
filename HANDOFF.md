@@ -1,6 +1,6 @@
 # TravelStories — Résumé de reprise
 
-Dernière mise à jour : 2026-09-04, fin de la **Phase 16** (CI/CD), remote GitHub connecté et CI vérifiée en conditions réelles (voir §20) — Phase 15 (Performance) volontairement sautée à la demande de l'utilisateur, voir §19.
+Dernière mise à jour : 2026-09-04, fin de la **Phase 15** (Performance) — reprise après la Phase 16 (CI/CD), voir §21.
 Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans perdre le contexte. Il n'est pas un livrable du plan (README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT restent à créer, voir "Dette de documentation" en bas).
 
 ---
@@ -33,7 +33,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 | 12 | Synchronization Engine | ✅ (écritures uniquement — voir §14 pour le scope exact) |
 | 13 | Security Rules (audit complet) | ✅ (voir §16 — une faille réelle corrigée côté Storage) |
 | 14 | Tests (suite complète) | ✅ (2 vrais bugs corrigés au passage — voir §18) |
-| 15 | Performance | ⬜ **sautée à la demande de l'utilisateur** (2026-09-04) — pas commencée, pas de raison technique |
+| 15 | Performance | ✅ (voir §21 — revue de code, aucun profiling possible ici ; un vrai correctif appliqué : taille de cache mémoire des images) |
 | 16 | CI/CD | ✅ (voir §20 — CI vérifiée en conditions réelles sur GitHub Actions, les deux jobs passent) |
 | 17 | Documentation | ⬜ |
 | 18 | Production Readiness Review | ⬜ |
@@ -61,6 +61,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 - **Champs immuables imposés par les règles Firestore, pas seulement par convention côté app** : `ownerId`/`createdAt` sur `travelBooks`, `travelBookId`/`ownerId`/`createdAt` sur `experiences` — un `update` qui tenterait de les changer est refusé. `experienceCount` ne peut varier que de ±1 par écriture (jamais sauté à une valeur arbitraire) et ne peut pas être négatif. Nécessaire parce qu'un carnet `isPublic` expose `createdAt`/`experienceCount` comme signaux de tri dans Home/Explore (Phase 9) — sans ça, un propriétaire malveillant pourrait se faire artificiellement passer pour "récent" ou "populaire" via un appel Firestore direct (hors app).
 - **Un contrôleur `AsyncNotifier<void>` ne doit jamais signaler "l'action a réussi" via `ref.listen((previous, next) => previous is AsyncLoading && next is AsyncData)`** : la toute première résolution du `build()` du contrôleur (même vide, `async {}`) produit *exactement* cette même transition, donc ce test se déclenche aussi à l'ouverture de l'écran, avant toute action utilisateur. Repéré (et corrigé) Phase 14 sur deux écrans — voir §18. Le bon pattern, déjà utilisé ailleurs dans le code (`CreateTravelBookController.create`) : la méthode du contrôleur retourne directement `Future<bool>` (ou l'id créé, etc.), et l'écran agit sur cette valeur retournée après l'avoir attendue — jamais en déduisant le succès de la forme de la transition d'état.
 - **CI (Phase 16) = analyse/tests + build Android debug, pas de déploiement** : `.github/workflows/ci.yml` a deux jobs, `analyze_and_test` (format, `flutter analyze`, `flutter test` — aucun secret requis, les tests n'utilisent que des fakes) et `build_android` (APK debug, pas release — pas de keystore de signature configuré, voir §8). Pas de job iOS (nécessiterait un runner macOS + signature Apple, aucun des deux n'existe) ni de publication (Play Store/TestFlight — Storage même pas activé, voir §8). `google-services.json`/`GoogleService-Info.plist`/`firebase_options.dart` sont déjà committés dans le repo (décision préexistante, pas remise en cause ici) donc la CI n'a besoin d'aucun secret pour tout ça — c'est volontairement le cas pour ces fichiers (clés client Firebase, pas des secrets serveur : la vraie protection vient des Security Rules, pas du secret du fichier).
+- **`AppImageCache` (Phase 15)** : constantes `memCacheWidth`/`memCacheHeight`/`maxWidth`/`maxHeight` pour tous les `CachedNetworkImage`/`CachedNetworkImageProvider` de l'app, même convention que `AppSpacing`/`AppRadius`/`AppShadows` (`lib/core/theme/`). Toute nouvelle image affichée à une taille fixe doit passer une de ces constantes plutôt que de décoder l'upload à pleine résolution (jusqu'à 2560px, voir `MediaService`) — voir §21 pour le détail.
 - **`LocationRepository` (Phase 7) est testable malgré l'absence de geolocator/geocoding en environnement headless** : contrairement à ce que les phases précédentes supposaient ("aucun test possible pour Phase 7"), le `LocationPickingMixin` et les écrans qui l'utilisent ne parlent qu'à l'interface `LocationRepository` — un `FakeLocationRepository` (Phase 14) suffit à exercer "utiliser ma position" (succès et échec) sans jamais toucher au plugin réel. Seul le rendu de carte (`flutter_map`, dans `location_picker_screen.dart`/`experience_map_preview.dart`) et la vidéo (`video_player`/`chewie`, sans interface de domaine équivalente) restent réellement hors de portée ici.
 
 ## 4. Contraintes d'environnement découvertes (important, relire avant de perdre du temps à les re-découvrir)
@@ -103,7 +104,7 @@ flutter analyze
 flutter test
 ```
 
-Dernier statut connu (fin Phase 16) : `flutter analyze` → 0 issue, `flutter test` → **69/69** tests verts (inchangé depuis la Phase 14 — la Phase 16 n'ajoute pas de test Dart, juste `.github/`).
+Dernier statut connu (fin Phase 15) : `flutter analyze` → 0 issue, `flutter test` → **69/69** tests verts (inchangé depuis la Phase 14 — ni la Phase 16 ni la Phase 15 n'ajoutent de test Dart).
 
 ## 7. Tests existants
 
@@ -136,7 +137,7 @@ Aucun test dédié pour : le rendu de carte (`flutter_map`, Phase 7) ni video_pl
 - [ ] Décider si on reste sur OpenStreetMap définitivement ou si Google Maps sera reconsidéré plus tard (carte bancaire disponible).
 - [ ] **Si des documents `users/{uid}` réels existent déjà dans le projet Firestore live** (créés avant la Phase 13), leur champ `email` traîne encore — l'app a arrêté de l'écrire mais rien ne l'a supprimé rétroactivement des documents existants. À nettoyer manuellement via la console Firebase (ou un script admin) si nécessaire ; pas fait ici pour ne pas toucher aux données live sans confirmation explicite. Probablement sans objet : aucun test "live" n'a été possible dans cet environnement (§4), donc il n'y a peut-être aucun vrai document utilisateur à ce jour.
 - [x] ~~Connecter un remote GitHub pour que la CI serve à quelque chose~~ — fait par l'utilisateur le 2026-09-04 (`origin` = `https://github.com/pandoras1505/travelstories.git`, branche `main`). Voir §20 pour le bug de déclencheur découvert et corrigé dans la foulée, et le résultat du premier run réel.
-- [ ] **Phase 15 (Performance) volontairement sautée** à la demande de l'utilisateur le 2026-09-04, pour faire la Phase 16 en premier — pas de raison technique, juste un choix d'ordre. Toujours ⬜ dans le tableau §2, à reprendre quand souhaité.
+- [x] ~~Phase 15 (Performance) volontairement sautée~~ — reprise et livrée le 2026-09-04 après la Phase 16. Voir §21.
 
 ## 9. Dette de documentation (Phase 17, pas encore commencée)
 
@@ -221,9 +222,9 @@ Deux écrans (`ForgotPasswordScreen`, `EditProfileScreen`) montraient leur confi
 
 Corrigé en remplaçant ce pattern par celui déjà utilisé ailleurs (`CreateTravelBookController.create` → id nullable retourné directement à l'appelant) : `ForgotPasswordController.sendResetLink` et `EditProfileController.saveDisplayName`/`uploadAvatar` retournent maintenant `Future<bool>` (succès ou non), et les écrans agissent sur cette valeur après l'avoir attendue — `ref.listen` ne sert plus qu'à afficher les erreurs, jamais à déduire un succès de la forme de la transition d'état. Voir §3 pour la règle générale à appliquer aux futurs contrôleurs de ce type.
 
-## 19. Phase 15 — sautée à la demande de l'utilisateur (2026-09-04)
+## 19. Phase 15 — historique (sautée puis reprise)
 
-Pas commencée. L'utilisateur a explicitement demandé de passer directement à la Phase 16 ; aucune raison technique à ce saut. Reste ⬜ dans le tableau §2, à reprendre quand souhaité. Pistes probables pour quand elle sera reprise : re-vérifier les listes lazy (Home/Explore/Mes carnets) sous des volumes plus réalistes, le nombre de lectures Firestore par écran (la jointure auteur `authorProfileProvider` fait un `get()` par carte affichée, sans dénormalisation — signalé comme point à revoir dès la Phase 9), et le coût de `localFirstStream`/`SyncEngine` sur de grosses files d'attente. Aucune mesure réelle possible dans cet environnement (pas de build Android/iOS, voir §4) — l'essentiel du travail serait probablement une revue de code plutôt que du profiling.
+Sautée le 2026-09-04 à la demande de l'utilisateur (aucune raison technique, juste un choix d'ordre — Phase 16 faite d'abord), puis reprise et livrée le même jour une fois la Phase 16 vérifiée en conditions réelles. Voir §21 pour ce qui a été livré.
 
 ## 20. Phase 16 — ce qui a été livré (CI/CD)
 
@@ -239,9 +240,25 @@ Pas commencée. L'utilisateur a explicitement demandé de passer directement à 
   - Seuls avertissements : dépréciation Node 20 / `actions/setup-java@v4` côté GitHub — cosmétique, pas bloquant, à traiter un jour en bumpant les actions (`@v5`, etc.), pas urgent.
 - Plus de bloquant connu sur cette phase.
 
-## 21. Prochaine étape
+## 21. Phase 15 — ce qui a été livré (Performance)
 
-Phase 16 terminée et vérifiée en conditions réelles (§20) : remote connecté, CI verte de bout en bout (analyze/test + build Android). Phase 15 (Performance) reste ⬜, sautée à la demande de l'utilisateur, pas abandonnée. Suite logique : soit reprendre la Phase 15, soit enchaîner sur la Phase 17 (Documentation — README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT, voir §9) ou la Phase 18 (Production Readiness Review), selon ce que l'utilisateur préfère.
+Aucun profiling réel possible dans cet environnement (pas de build Android/iOS, pas de DevTools timeline — voir §4.1) : la phase a donc été une **revue de code ciblée**, pas une optimisation mesurée. Un agent de recherche a vérifié chacune des pistes spéculées en §19 (ancienne version) contre le code réel plutôt que de les supposer encore valables.
+
+- **Vérifié et jugé déjà correct, aucun changement nécessaire** :
+  - `authorProfileProvider` (jointure auteur Home/Explore, §9) : `FutureProvider.family` sans `.autoDispose` → Riverpod garde chaque `{uid: UserProfile}` en cache pour la durée du container. Un `get()` Firestore par auteur **distinct** vu depuis le lancement de l'app, jamais par carte réaffichée ni par re-scroll. Non un problème à l'échelle réaliste de cette app.
+  - Toutes les listes de données (Accueil, Explorer, Mes carnets, Expériences) utilisent déjà `ListView.separated`/`SliverList.separated` (lazy) — aucune liste non bornée avec `children: [...]` trouvée. Les 3 `ListView(children: ...)` restants sont du contenu statique borné (profil, état vide, skeleton fixe), pas un bug.
+  - `const` déjà quasi-systématique sur les sous-arbres statiques des écrans les plus complexes (échantillonnés : Home, Explore, détail carnet, liste carnets).
+  - `SyncEngine`/`pending_mutations` : pas de re-scan de table complète par mutation (`LIMIT 1` ciblé), `upsertAll` des data sources locales utilise déjà `_db.batch()` + un seul `commit()` (pas une boucle d'`INSERT` individuels).
+  - Scope Riverpod déjà correct : `OfflineBanner` est le seul widget à observer `isOnlineProvider`, isolé du reste de l'arbre (`AppShell` ne le observe pas) — un changement de connectivité ne re-construit que le petit bandeau, pas le shell/les listes.
+- **Vrai correctif appliqué — taille du cache mémoire des images** : les uploads sont compressés à l'upload (jusqu'à 2560px de long côté, voir `MediaService`/§3) mais **aucun** appel `CachedNetworkImage`/`CachedNetworkImageProvider` ne bornait `memCacheWidth`/`memCacheHeight` (ou `maxWidth`/`maxHeight` côté provider) — chaque couverture de carnet ou média d'expérience était décodée en mémoire à sa pleine résolution même pour s'afficher dans une carte de ~150-300dp. Impact réel (modéré, pas critique à cette échelle) : décodage plus lent + mémoire gaspillée par carte affichée, cumulatif sur un flux avec plusieurs carnets illustrés.
+  - Nouveau fichier **`lib/core/theme/app_image_cache.dart`** (`AppImageCache`, même convention que `AppSpacing`/`AppRadius`/`AppShadows`) : `coverWidth = 1080` (couvertures/médias plein-écran 16:9, dimensionné pour un téléphone à densité 2x sur toute la largeur — encore ~5,7× moins de pixels qu'un upload à 2560px, sans perte visible sur un appareil typique), `largeAvatar = 300` (avatar profil, `CircleAvatar` radius 48 = 96dp de diamètre à densité 3x), `smallAvatar = 80` (avatar auteur inline sur une carte, radius 10 = 20dp à densité 3x).
+  - Appliqué aux 9 emplacements concernés : `public_travel_book_card.dart` (couverture + avatar auteur), `home_screen.dart` (couverture en vedette), `travel_book_detail_screen.dart` (couverture d'en-tête + vignette d'expérience), `travel_books_screen.dart` (couverture liste), `edit_travel_book_screen.dart` (couverture éditable), `edit_experience_screen.dart` (aperçu média + vignette), `profile_screen.dart`/`edit_profile_screen.dart` (avatar).
+- **Trouvé mais jugé non prioritaire, pas corrigé** : la réconciliation de cache local (`travel_book_repository_impl.dart`/`experience_repository_impl.dart`) supprime les lignes SQLite périmées une par une (`await` séquentiel) plutôt qu'en lot — négligeable au volume réaliste de cette app (quelques carnets/expériences par utilisateur, et seules les lignes réellement supprimées côté serveur déclenchent ce chemin).
+- **Vérification** : `flutter analyze` → 0 issue, `flutter test` → 69/69 verts (inchangé — ces tests exercent déjà les écrans modifiés, ce qui confirme que l'ajout des paramètres de cache ne casse rien). Aucune vérification visuelle possible (web cassé par `firebase_core_web`, voir §4.2 ; pas de build Android/iOS, voir §4.1) — cohérent avec la méthode de vérification des phases précédentes.
+
+## 22. Prochaine étape
+
+Phases 15 et 16 terminées. Phase 16 vérifiée en conditions réelles (§20) : remote connecté, CI verte de bout en bout (analyze/test + build Android). Phase 15 (§21) : revue de performance ciblée, un vrai correctif appliqué (taille de cache image), reste du code déjà sain à cette échelle. Suite logique : Phase 17 (Documentation — README/ARCHITECTURE/SECURITY/OFFLINE_SYNC/DEPLOYMENT, voir §9) ou Phase 18 (Production Readiness Review), selon ce que l'utilisateur préfère.
 
 ---
 
