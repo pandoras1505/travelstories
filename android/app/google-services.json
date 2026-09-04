@@ -12,7 +12,20 @@
           "package_name": "com.travelstories.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1043925918030-k3rpnhrppp60pf47uoctc8cl5vk9obi9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.travelstories.app",
+            "certificate_hash": "faf562c0095cbb6c08a5e668add909071fa666a5"
+          }
+        },
+        {
+          "client_id": "1043925918030-h1ehspcmod1v7nvfq5jmkhilq59irlra.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBqkjU-vnoZxnUg3Cl6dO-t18RgFzFXi4U"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1043925918030-h1ehspcmod1v7nvfq5jmkhilq59irlra.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1043925918030-igma6ui4ui57vsr9h5boc5o9j8humrjv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.travelstories.app"
+              }
+            }
+          ]
         }
       }
     }

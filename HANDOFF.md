@@ -89,7 +89,7 @@ Ce fichier existe pour reprendre le projet dans une nouvelle conversation sans p
 - **Storage** : **non activé** (voir §4.3). `storage.rules` écrites et durcies (Phase 13 — voir §16) mais pas déployées (le déploiement échouera tant que le bucket par défaut n'existe pas — nécessite le clic "Get Started" en console, qui nécessite Blaze).
 - **Config apps** : Android (`google-services.json`), iOS (`GoogleService-Info.plist`, placé manuellement — FlutterFire CLI ne peut pas le générer depuis Windows sans Xcode), Web (`firebase_options.dart`, gardé uniquement pour l'aide au QA local).
 - **iOS Google Sign-In** : `REVERSED_CLIENT_ID` câblé dans `Info.plist` (`CFBundleURLTypes`).
-- **Android Google Sign-In** : nécessitera l'ajout de l'empreinte SHA-1 du keystore (debug puis release) dans la console Firebase avant de fonctionner sur un vrai appareil — pas encore fait (aucun build Android n'a pu être testé, voir §4.1).
+- **Android Google Sign-In** : empreinte SHA-1 du keystore **debug** ajoutée dans la console Firebase le 2026-09-04 (`FA:F5:62:C0:09:5C:BB:6C:08:A5:E6:68:AD:D9:09:07:1F:A6:66:A5`, extraite via `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey` — pas besoin de Gradle/`signingReport`, qui plante ici comme tout le reste, voir §4.1) ; `android/app/google-services.json` remplacé par la version régénérée par Firebase (contient maintenant un `oauth_client` avec `certificate_hash` correspondant). Toujours pas testé sur un vrai appareil (§4.1). **Empreinte release pas encore possible** : aucun keystore de release n'existe (`android/app/build.gradle.kts` signe la config `release` avec la clé debug, TODO laissé par `flutter create`) — à faire quand un vrai keystore de release sera généré (action sensible, à ne pas faire sans que l'utilisateur soit conscient qu'il doit être précieusement conservé).
 
 ## 6. Comment relancer les vérifications
 
@@ -131,10 +131,10 @@ Aucun test dédié pour : le rendu de carte (`flutter_map`, Phase 7) ni video_pl
 
 ## 8. Dette connue / actions en attente côté utilisateur
 
-- [ ] Activer Firebase Storage (plan Blaze) quand une carte sera disponible → déployer `storage.rules`.
-- [ ] Ajouter l'empreinte SHA-1 Android (debug + release) dans la console Firebase pour Google Sign-In.
+- [ ] **Firebase Storage : reste non activé, décision confirmée par l'utilisateur le 2026-09-04** (pas de carte bancaire disponible pour le plan Blaze). Plus une "action en attente" qu'un point à reconsidérer sans nouvel élément (carte disponible) — `storage.rules` reste écrit et durci (Phase 13) mais non déployé.
+- [x] ~~Ajouter l'empreinte SHA-1 Android debug dans la console Firebase~~ — fait par l'utilisateur le 2026-09-04, `google-services.json` remplacé. Voir §5. Empreinte **release** toujours en attente (pas de keystore de release créé).
 - [ ] Tester un vrai build Android/iOS sur une machine sans la restriction réseau (§4.1) ou sur un appareil physique.
-- [ ] Décider si on reste sur OpenStreetMap définitivement ou si Google Maps sera reconsidéré plus tard (carte bancaire disponible).
+- [x] ~~Décider OpenStreetMap vs Google Maps~~ — **OpenStreetMap confirmé définitivement** par l'utilisateur le 2026-09-04, pas de retour envisagé sur Google Maps.
 - [ ] **Si des documents `users/{uid}` réels existent déjà dans le projet Firestore live** (créés avant la Phase 13), leur champ `email` traîne encore — l'app a arrêté de l'écrire mais rien ne l'a supprimé rétroactivement des documents existants. À nettoyer manuellement via la console Firebase (ou un script admin) si nécessaire ; pas fait ici pour ne pas toucher aux données live sans confirmation explicite. Probablement sans objet : aucun test "live" n'a été possible dans cet environnement (§4), donc il n'y a peut-être aucun vrai document utilisateur à ce jour.
 - [x] ~~Connecter un remote GitHub pour que la CI serve à quelque chose~~ — fait par l'utilisateur le 2026-09-04 (`origin` = `https://github.com/pandoras1505/travelstories.git`, branche `main`). Voir §20 pour le bug de déclencheur découvert et corrigé dans la foulée, et le résultat du premier run réel.
 - [x] ~~Phase 15 (Performance) volontairement sautée~~ — reprise et livrée le 2026-09-04 après la Phase 16. Voir §21.
