@@ -33,6 +33,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        // A fixed, committed debug keystore (not sensitive — debug builds
+        // aren't distributed) rather than the OS/AGP-default
+        // `~/.android/debug.keystore`. CI runners are ephemeral and have
+        // no such file, so without this every CI build got a fresh
+        // debug key — signatures never matched between runs, and
+        // `adb install -r` refused to update a device's existing install
+        // (INSTALL_FAILED_UPDATE_INCOMPATIBLE), forcing an uninstall
+        // (losing all locally-stored media/data, see OFFLINE_SYNC.md)
+        // just to try each new build.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
